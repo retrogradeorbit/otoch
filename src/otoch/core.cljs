@@ -16,7 +16,7 @@
 )
   (:require-macros [cljs.core.async.macros :refer [go]]
                    ;;[infinitelives.pixi.macros :as m]
-                   ;;[infinitelives.pixi.pixelfont :as pf]
+                   [infinitelives.pixi.pixelfont :as pf]
 ))
 
 (enable-console-print!)
@@ -333,7 +333,7 @@
         (when r
           (recur r))))))
 
-#_
+
 (defonce main
   (go
     ;; load image tilesets
@@ -354,7 +354,7 @@
 
     (go
       (c/with-sprite :title
-        [title (pf/make-text :pixel "DYNA-MINER 0.4"
+        [title (pf/make-text :pixel "OTOCH"
                              :scale 4 :xhandle 0.5)
 
          ]
@@ -363,7 +363,7 @@
           (recur))))
 
     ;; make the tile texture lookup
-    (let [tile-set (tm/make-tile-set :tiles)
+    #_ (let [tile-set (tm/make-tile-set :tiles)
           stand (t/sub-texture (r/get-texture :tiles :nearest) [0 96] [16 16])
           walk (t/sub-texture (r/get-texture :tiles :nearest) [16 96] [16 16])
           tilemap-order-lookup (tm/make-tiles-struct tile-set tile-map)
