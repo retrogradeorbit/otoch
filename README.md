@@ -1,5 +1,13 @@
 # otoch
 
+Space knave plunders a deep space dreadnought for alien artefacts and space-dollars.
+
+[PLAY IT NOW!](https://retrogradeorbit.github.io/otoch/)
+
+## Overview
+
+For Global Game Jam 2019
+
 FIXME: Write a one-line description of your library/project.
 
 ## Overview
@@ -30,7 +38,7 @@ To create a production build run:
     lein do clean, cljsbuild once min
 
 And open your browser in `resources/public/index.html`. You will not
-get live reloading, nor a REPL. 
+get live reloading, nor a REPL.
 
 ## License
 
