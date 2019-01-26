@@ -144,8 +144,6 @@
             (recur res)))))
     c))
 
-(def gravity (vec2/vec2 0 0.01))
-
 (defn make-dynamite [container pos vel start-frame]
   (go
     (c/with-sprite container
@@ -175,7 +173,7 @@
                                    p (vec2/add p v))
                                   new-vel (-> new-pos
                                               (vec2/sub p)
-                                              (vec2/add gravity)
+                                              (vec2/add consts/gravity)
                                               (vec2/scale 0.98))]
                               (recur (inc n)
                                      new-pos
@@ -213,7 +211,7 @@
                                                   p (vec2/add p v))
                                                  new-vel (-> new-pos
                                                              (vec2/sub p)
-                                                             (vec2/add gravity)
+                                                             (vec2/add consts/gravity)
                                                              (vec2/scale 0.98))]
                                              (recur (inc n)
                                                     new-pos
@@ -244,7 +242,7 @@
                    p (vec2/add p v))
                   new-vel (-> new-pos
                               (vec2/sub p)
-                              (vec2/add gravity)
+                              (vec2/add consts/gravity)
                               (vec2/scale 0.98))]
               (recur (inc n)
                      new-pos
@@ -381,7 +379,7 @@
 
          ]
 
-        (enemy/spawn enemies (vec2/vec2 20 5))
+        (enemy/spawn enemies (vec2/vec2 43 0))
 
         ;;(s/set-scale! background 1)
         (loop [
@@ -587,7 +585,7 @@
                               ;; zero any y vel in the last frames vel if we are climbing
                               (vec2/set-y (if (= state :climbing) 0 (vec2/get-y old-vel)))
                               ;; no gravity on you when you are on the stairs
-                              (vec2/add (if (= state :climbing) (vec2/zero) gravity))
+                              (vec2/add (if (= state :climbing) (vec2/zero) consts/gravity))
 
                               (vec2/add jump-force)
                               (vec2/add joy-acc)
