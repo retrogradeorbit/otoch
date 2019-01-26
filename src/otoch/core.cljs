@@ -106,7 +106,7 @@
    bg-map-lines
    (fn [c]
      (cond
-       (#{:clover :grass-fg-1 :grass-fg-2 :grass-fg-3 :cactus-fg :reeds-fg} c)
+       (#{:clover :grass-fg-1 :grass-fg-2 :grass-fg-3 :cactus-fg :reeds-fg :nubby-fg} c)
        c
 
        ;;(= c :ladder-top) :ladder-top-fg

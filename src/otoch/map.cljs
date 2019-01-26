@@ -17,7 +17,9 @@
     "C" :cactus-fg
     "c" :cactus
     "R" :reeds-fg
-    "r" :reeds))
+    "r" :reeds
+    "N" :nubby-fg
+    "n" :nubby))
 
 (defn strs->keymap [strs]
   (mapv #(mapv key-for %) strs))
@@ -32,6 +34,9 @@
 (def passable? (comp not not-passable?))
 (def not-walkable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11 :dirt-top-1 :dirt-top-2 :dirt-top-3})
 (def walkable? (comp not not-walkable?))
+
+(def all-dirt
+  #{:dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11})
 
 (defn remapv [y-1 y y+1]
   (js/console.log y-1 y y+1)
@@ -48,9 +53,9 @@
          ;; [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :rocks _]
          ;; :rocks-top
 
-         [(t :guard #(not= :dirt %) )
-          (m :guard #{:dirt})
-          b]
+         [(_ :guard (complement all-dirt))
+          (_ :guard all-dirt)
+          _]
          (rand-nth [:dirt-top-1 :dirt-top-2 :dirt-top-3])
 
          ;; default: dont change tile
@@ -67,6 +72,22 @@
          ;; grass right edge
          [_ :grassy (_ :guard (complement #{:grassy}))]
          :grassy-right
+
+         [:dirt-11
+          (_ :guard all-dirt)
+          _]
+         (rand-nth [:dirt-2 :dirt-4 :dirt-6 :dirt-7 :dirt-8 :dirt-1 :dirt-3 :dirt-5])
+
+         [:dirt-2
+          (_ :guard all-dirt)
+          _]
+         (rand-nth [:dirt-4 :dirt-6 :dirt-7 :dirt-8 :dirt-1 :dirt-3 :dirt-5])
+
+         [:dirt-4
+          (_ :guard all-dirt)
+          _]
+         (rand-nth [:dirt-2 :dirt-6 :dirt-7 :dirt-8 :dirt-1 :dirt-3 :dirt-5])
+
 
          ;; default leave tile
          [_ _ _]
@@ -135,8 +156,16 @@
                           ;; :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7
                           ;; :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7
 
-                          :dirt-9 :dirt-10 :dirt-11
 
+                          :dirt-9 :dirt-10
+                          :dirt-9 :dirt-10
+                          :dirt-9 :dirt-10
+                          :dirt-9 :dirt-10
+                          :dirt-9 :dirt-10
+                          :dirt-9 :dirt-10
+
+                          :dirt-11
+                          :dirt-2
                           ])
 
                         tile)
@@ -181,7 +210,8 @@
          :cactus-fg [(* 4 64) (* 2 64)]
          :reeds [(* 5 64) (* 2 64)]
          :reeds-fg [(* 5 64) (* 2 64)]
-
+         :nubby [(* 6 64) (* 2 64)]
+         :nubby-fg [(* 6 64) (* 2 64)]
 
          }
         ]
@@ -228,8 +258,8 @@ is at a location [x y]. keys are positions. values are nth index"
        "-        -     ---          XXXXXXXXXX                                -------------"
        "-      ---       - r , .  t                                           -------------"
        "-                XXXXXXXXXXXX                                         -------------"
-       "-                     -                                c    C         -------------"
-       "+++  ++++    ++++++++++++++++++++++               +++++++++++++++++++++++++++++++++"
+       "-              n      -                                c    C         -------------"
+       "+++  ++++    ++++++++++++++++++++++  N            +++++++++++++++++++++++++++++++++"
        "++++  +++    ++++++++++++++++++++++++++       +++++++++++++++++++++++++++++++++++++"
        "+++++  ++    ++++++++++++++++++++          ++++++++++++++++++++++++++++++++++++++++"
        "++++++  +    ++++++++++++          ++++++++++++++++++++++++++++++++++++++++++++++++"
@@ -238,5 +268,5 @@ is at a location [x y]. keys are positions. values are nth index"
        "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
        "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
        ]
-      strs->keymap remaph-keymap remapv-keymap randomise-keymap
+      strs->keymap randomise-keymap remaph-keymap remapv-keymap
       ))
