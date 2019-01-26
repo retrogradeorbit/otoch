@@ -40,11 +40,11 @@
 (def tile-map
   (-> [
        "-----------------------------------------------------------------------------------"
-       "-         -            -               ..  t.                         -------------"
+       "-         -            -               ,.  t.                         -------------"
        "- -   -      -                       XXXXXXXXX                        -------------"
-       "-        -          -       t ..  ...                                 -------------"
+       "-        -          -       t ,,  ..,                                 -------------"
        "- -            -            XXXXXXXXXX                                -------------"
-       "-       -        .   . .  t                                           -------------"
+       "-       -        .   , .  t                                           -------------"
        "-  -             XXXXXXXXXXXX                                         -------------"
        "-                                                                     -------------"
        "---------    ----------------------               ---------------------------------"
@@ -98,8 +98,10 @@
    bg-map-lines
    (fn [c]
      (cond
-       (= c :web) :web
-       (= c :ladder-top) :ladder-top-fg
+       (#{:clover :grass-foreground-1 :grass-foreground-2 :grass-foreground-3} c)
+       c
+
+       ;;(= c :ladder-top) :ladder-top-fg
        :default :space))))
 
 (defn not-passable? [x y]
@@ -138,7 +140,7 @@
 
 (def h-edge 0.3)
 (def minus-h-edge (- 1 h-edge))
-(def v-edge 0.40)
+(def v-edge 0.45)
 (def minus-v-edge (- 1 v-edge))
 
 (defn hollow
@@ -404,7 +406,7 @@
                   )
          platform (s/make-container
                    :children (tm/make-tiles tile-set platform-map)
-                   :xhandle 0 :yhandle 0
+                   ;; :xhandle 0 :yhandle 0
                    :scale 1
                    ;;:particle true
                    )
@@ -419,11 +421,12 @@
          ;;            :scale 1
          ;;            :particle true)
          player (s/make-sprite stand :scale 1)
-         ;; foreground (s/make-container
-         ;;             :children (tm/make-tiles tile-set (into [] (make-foreground-map tile-map)))
-         ;;             :xhandle 0 :yhandle 0
-         ;;             :scale 1
-         ;;             :particle true)
+         foreground (s/make-container
+                     :children (tm/make-tiles tile-set (into [] (make-foreground-map tile-map)))
+                     ;;:xhandle 0 :yhandle 0
+                     :scale 1
+                     ;;:particle true
+                     )
          ;;dynamites (s/make-container :scale 1 :particle false)
 
          ]
@@ -487,14 +490,7 @@
                 (let [pos (-> old-platform-pos
                               (vec2/scale (* 4 16))
                               (vec2/add (vec2/vec2 x y)))]
-                  (s/set-pos!
-                   obj
-
-                   ;; DIRTY HACK TO MOVE PLATFORMS BY ONE TILE BUT NOT THE LEVEL!
-                   (if (= :level name)
-                     pos
-                     (vec2/add pos (vec2/vec2 64 64))
-                     ))))
+                  (s/set-pos! obj pos)))
               platforms-this-frame
               [tilemap platform ;;platform2 platform3
                ]))
@@ -504,7 +500,7 @@
                  (js/console.log x y)
                  (s/set-pos! tilemap (vec2/vec2 x y)))
 
-            #_ (s/set-pos! foreground x y)
+            (s/set-pos! foreground x y)
             #_ (s/set-pos! background
                            (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
                            (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
@@ -598,11 +594,13 @@
 
                   joy-dx (-> joy
                              (hollow 0.2)
-                             (vec2/scale 0.01)
+                             (vec2/scale 0.005)
                              (vec2/get-x))
 
                   state-ladder? (and on-ladder-transition?
                                      (not (zero? joy-dy)))
+
+                  _ (js/console.log "jdx:" joy-dx)
 
                   joy-acc (if (= :climbing state)
                             (vec2/vec2 joy-dx (* 0.1 joy-dy))

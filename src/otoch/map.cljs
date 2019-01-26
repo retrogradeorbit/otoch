@@ -11,6 +11,7 @@
     " " :space
     "t" :clover
     "." :grass
+    "," :grass-foreground
     "X" :grassy))
 
 (defn strs->keymap [strs]
@@ -106,6 +107,11 @@
                         :grass
                         (rand-nth [:grass-1 :grass-2 :grass-3])
 
+                        :grass-foreground
+                        (rand-nth [:grass-foreground-1
+                                   :grass-foreground-2
+                                   :grass-foreground-3])
+
                         tile)
                       ))
                   (range width)))
@@ -125,6 +131,10 @@
          :grass-1 [(* 0 64) (* 2 64)]
          :grass-2 [(* 1 64) (* 2 64)]
          :grass-3 [(* 2 64) (* 2 64)]
+         :grass-foreground-1 [(* 0 64) (* 2 64)]
+         :grass-foreground-2 [(* 1 64) (* 2 64)]
+         :grass-foreground-3 [(* 2 64) (* 2 64)]
+
          }
         ]
     (->> tile-lookup
