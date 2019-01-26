@@ -440,14 +440,15 @@
               (fn [{:keys [name old-platform-pos]} obj]
                 (let [pos (-> old-platform-pos
                               (vec2/scale (* 4 16))
-                              (vec2/add (vec2/vec2 x y)))]
-                  (s/set-pos! obj pos)))
+                              (vec2/add (vec2/vec2 x y)))
+                      [x y] pos]
+                  (s/set-pos! obj (int x) (int y))))
               platforms-this-frame
               [tilemap platform ;;platform2 platform3
                ]))
 
 
-            (s/set-pos! foreground x y)
+            (s/set-pos! foreground (int x) (int y))
 
             #_ (s/set-pos! background
                            (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
@@ -456,7 +457,7 @@
             ;; save level pos so other go blocks can access
             ;; (swap! state/state assoc :pos (vec2/vec2 x y))
 
-            (s/set-pos! enemies x y)
+            (s/set-pos! enemies (int x) (int y))
 
             (<! (e/next-frame))
                                         ;(log dy minus-v-edge)

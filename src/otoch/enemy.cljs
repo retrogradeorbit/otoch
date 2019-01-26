@@ -26,6 +26,12 @@
 (defn count-enemies []
   (count @enemies))
 
+(def reverse-dir
+  {:left :right
+   :right :left})
+
+(def speed 0.0005)
+
 (defn spawn [container start-pos]
   (go
     (let [ekey (keyword (gensym))
@@ -36,10 +42,13 @@
 
         (loop [n 0
                p start-pos
-               v (vec2/zero)]
+               v (vec2/zero)
+               facing :left
+               ]
           (s/set-pos! enemy (vec2/scale p 64))
+          (s/set-scale! enemy (if (= :left facing) 1 -1) 1)
           (<! (e/next-frame))
-          (if (< n 3000)
+          (if true ;;(< n 3000)
             ;; still alive
             (do
               #_ (let [frame (int (/ n 60))
@@ -53,20 +62,25 @@
 
                     new-pos
                     (constraints/constrain-pos
-                     constraints/dynamite-constrain
+                     constraints/enemy-constrain
                      (-> platforms/platforms
                          (platforms/prepare-platforms (+ 1 start-frame n))
                          (platforms/filter-platforms p))
-                     p (vec2/add (vec2/add p v) (vec2/vec2 -0.0005 0)))
+                     p (vec2/add (vec2/add p v) (vec2/vec2 (if (= :left facing) (- speed) speed) 0)))
 
                     new-vel (-> new-pos
                                 (vec2/sub p)
 
                                 (vec2/add consts/gravity)
-                                (vec2/scale 0.98))]
+                                (vec2/scale 0.98))
+                    vel-x (vec2/get-x new-vel)
+                    new-facing (if (zero? vel-x) (reverse-dir facing) facing)
+                    ]
+
                 (recur (inc n)
                        new-pos
-                       new-vel)))
+                       new-vel
+                       new-facing)))
 
             ;; rune over. return final pos
             p))

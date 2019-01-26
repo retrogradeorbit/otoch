@@ -28,9 +28,9 @@
 (defn get-tile-at [tm x y]
   (get-in tm [y x]))
 
-(def not-passable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3})
+(def not-passable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7})
 (def passable? (comp not not-passable?))
-(def not-walkable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3})
+(def not-walkable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7})
 (def walkable? (comp not not-walkable?))
 
 (defn remap [y-1 y y+1]
@@ -118,7 +118,18 @@
                                    :grass-fg-3])
 
                         :dirt
-                        (rand-nth [:dirt-1 :dirt-2 :dirt-3 :dirt-2 :dirt-2 :dirt-2 :dirt-2 :dirt-2 :dirt-2])
+                        (rand-nth
+                         [:dirt-1
+                          :dirt-2 :dirt-2
+                          :dirt-3
+                          :dirt-4 :dirt-4
+                          :dirt-5
+                          :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6
+                          :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6
+                          :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7
+                          :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7
+
+                          ])
 
                         tile)
                       ))
@@ -135,6 +146,11 @@
          :dirt-1 [0 64]
          :dirt-2 [(* 1 64) 64]
          :dirt-3 [(* 2 64) 64]
+         :dirt-4 [(* 3 64) 64]
+         :dirt-5 [(* 4 64) 64]
+         :dirt-6 [(* 5 64) 64]
+         :dirt-7 [(* 6 64) 64]
+
          :grassy-left [(* 5 64) 0]
          :grassy [(* 6 64) 0]
          :grassy-right [(* 7 64) 0]
@@ -193,8 +209,8 @@ is at a location [x y]. keys are positions. values are nth index"
        "-         -            -               ,.  t.                         -------------"
        "- -   -      -                       XXXXXXXXX                        -------------"
        "-        -          -       t ,, R..,                                 -------------"
-       "- -            -            XXXXXXXXXX                                -------------"
-       "-       -        . r , .  t                                           -------------"
+       "- -            ---          XXXXXXXXXX                                -------------"
+       "-       -        - r , .  t                                           -------------"
        "-  -             XXXXXXXXXXXX                                         -------------"
        "-                                                      c    C         -------------"
        "+++++++++    ++++++++++++++++++++++               +++++++++++++++++++++++++++++++++"
