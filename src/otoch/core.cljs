@@ -18,6 +18,7 @@
             [otoch.platforms :as platforms]
             [otoch.particle :as particle]
             [otoch.enemy :as enemy]
+            [otoch.heart :as heart]
             [cljs.core.async :refer [chan close! >! <! timeout]]
 )
   (:require-macros [cljs.core.async.macros :refer [go]]
@@ -97,6 +98,8 @@
    :explosion-4 {:size [16 16] :pos [96 48]}
    :explosion-5 {:size [16 16] :pos [112 48]}
    :explosion-6 {:size [16 16] :pos [128 48]}
+
+   :heart {:size [128 128] :pos [(* 14 64) (* 3 64)]}
 
    :gold {:size [16 16] :pos [0 32]}
    })
@@ -445,6 +448,7 @@
          ]
 
         (enemy/spawn enemies (vec2/vec2 43 0))
+        (heart/spawn enemies (vec2/vec2 4 4))
 
         (s/set-scale! background 1)
         (s/set-scale! background-2 1)
