@@ -194,7 +194,9 @@
                                            v (vec2/zero)
                                            rise 1
                                            ]
-                                      (s/set-pos! sprite (vec2/scale (vec2/add p (vec2/vec2 0 rise)) 64))
+                                      (let [new-pos (vec2/scale (vec2/add p (vec2/vec2 0 rise)) 64)
+                                            [x y] new-pos]
+                                        (s/set-pos! sprite (int x) (int y) ))
                                       (<! (e/next-frame))
 
                                       (if (< n (+ 300 600))
@@ -303,9 +305,13 @@
                               :xhandle 0.5
                               :yhandle 0.5
                               :alpha 1.0)]
-        (loop []
-          (<! (e/next-frame))
-          (recur)))
+        (loop [n 0]
+          (let [frac (/ n 20)]
+            (s/set-pos! title 0 (- 250 (* frac frac 100)))
+            (s/set-scale! title (/ 2 (inc (* frac frac))))
+            (<! (e/next-frame))
+            (when (< n 150)
+              (recur (+ n 0.1))))))
       )
 
     ;; make the tile texture lookup

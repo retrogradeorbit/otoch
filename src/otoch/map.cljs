@@ -7,7 +7,8 @@
 
 (defn key-for [c]
   (case c
-    "-" :dirt
+    "-" :rocks
+    "+" :dirt
     " " :space
     "t" :clover
     "." :grass
@@ -27,24 +28,24 @@
 (defn get-tile-at [tm x y]
   (get-in tm [y x]))
 
-(def not-passable? #{:dirt-1 :dirt-2 :dirt-3 :grassy-left :grassy :grassy-right})
+(def not-passable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3})
 (def passable? (comp not not-passable?))
-(def not-walkable? #{:dirt-1 :dirt-2 :dirt-3 :grassy-left :grassy :grassy-right})
+(def not-walkable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3})
 (def walkable? (comp not not-walkable?))
 
 (defn remap [y-1 y y+1]
   (match [y-1 y y+1]
-         ;; put top-bottom dirt tiles where the dirt is solo
-         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :dirt (b :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
-         :dirt-top-bottom
+         ;; put top-bottom rocks tiles where the rocks is solo
+         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :rocks (b :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
+         :rocks-top-bottom
 
-         ;; put bottom dirt tiles where the dirt ends
-         [_ :dirt (t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
-         :dirt-bottom
+         ;; put bottom rocks tiles where the rocks ends
+         [_ :rocks (t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
+         :rocks-bottom
 
-         ;; put top dirt tiles at the top edges
-         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :dirt _]
-         :dirt-top
+         ;; put top rocks tiles at the top edges
+         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :rocks _]
+         :rocks-top
 
          ;; default: dont change tile
          [_ _ _]
@@ -105,8 +106,8 @@
                           tile (get-in keymap [y x])
                           ]
                       (case tile
-                        :dirt
-                        (rand-nth [:dirt-1 :dirt-2 :dirt-3])
+                        :rocks
+                        (rand-nth [:rocks-1 :rocks-2 :rocks-3])
 
                         :grass
                         (rand-nth [:grass-1 :grass-2 :grass-3])
@@ -115,6 +116,9 @@
                         (rand-nth [:grass-fg-1
                                    :grass-fg-2
                                    :grass-fg-3])
+
+                        :dirt
+                        (rand-nth [:dirt-1 :dirt-2 :dirt-3 :dirt-2 :dirt-2 :dirt-2 :dirt-2 :dirt-2 :dirt-2])
 
                         tile)
                       ))
@@ -125,9 +129,12 @@
   (let [texture (r/get-texture resource-key :nearest)
         tile-lookup
         {
-         :dirt-1 [0 0]
-         :dirt-2 [(* 1 64) 0]
-         :dirt-3 [(* 2 64) 0]
+         :rocks-1 [0 0]
+         :rocks-2 [(* 1 64) 0]
+         :rocks-3 [(* 2 64) 0]
+         :dirt-1 [0 64]
+         :dirt-2 [(* 1 64) 64]
+         :dirt-3 [(* 2 64) 64]
          :grassy-left [(* 5 64) 0]
          :grassy [(* 6 64) 0]
          :grassy-right [(* 7 64) 0]
@@ -142,6 +149,7 @@
          :cactus-fg [(* 4 64) (* 2 64)]
          :reeds [(* 5 64) (* 2 64)]
          :reeds-fg [(* 5 64) (* 2 64)]
+
 
          }
         ]
@@ -189,14 +197,14 @@ is at a location [x y]. keys are positions. values are nth index"
        "-       -        . r , .  t                                           -------------"
        "-  -             XXXXXXXXXXXX                                         -------------"
        "-                                                      c    C         -------------"
-       "---------    ----------------------               ---------------------------------"
-       "---------    --------------------------       -------------------------------------"
-       "---------    --------------------          ----------------------------------------"
-       "---------    ------------          ------------------------------------------------"
-       "---------                   -------------------------------------------------------"
-       "---------        ------------------------------------------------------------------"
-       "---------     ---------------------------------------------------------------------"
-       "-----------------------------------------------------------------------------------"
+       "+++++++++    ++++++++++++++++++++++               +++++++++++++++++++++++++++++++++"
+       "+++++++++    ++++++++++++++++++++++++++       +++++++++++++++++++++++++++++++++++++"
+       "+++++++++    ++++++++++++++++++++          ++++++++++++++++++++++++++++++++++++++++"
+       "+++++++++    ++++++++++++          ++++++++++++++++++++++++++++++++++++++++++++++++"
+       "+++++++++                   +++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+       "+++++++++        ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+       "+++++++++     +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+       "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
        ]
       strs->keymap remaph-keymap randomise-keymap
       ))
