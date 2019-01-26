@@ -35,17 +35,17 @@
 )
 
 
-(defonce bg-colour 0x62e7cd)
+(defonce bg-colour 0xb8f3e8)
 
 (def tile-map
   (-> [
        "-----------------------------------------------------------------------------------"
-       "-         -            -                                              -------------"
-       "- -   -      -                       -                                -------------"
-       "-        -          -                                                 -------------"
-       "- -            -              -                                       -------------"
-       "-       -            -                                                -------------"
-       "-  -             -          -                                         -------------"
+       "-         -            -               ..  t.                         -------------"
+       "- -   -      -                       XXXXXXXXX                        -------------"
+       "-        -          -       t ..  ...                                 -------------"
+       "- -            -            XXXXXXXXXX                                -------------"
+       "-       -        .   . .  t                                           -------------"
+       "-  -             XXXXXXXXXXXX                                         -------------"
        "-                                                                     -------------"
        "---------    ----------------------               ---------------------------------"
        "---------    --------------------------       -------------------------------------"
@@ -56,7 +56,7 @@
        "---------     ---------------------------------------------------------------------"
        "-----------------------------------------------------------------------------------"
        ]
-      tm/strs->keymap tm/randomise-keymap ;;tm/remap-keymap
+      tm/strs->keymap tm/remaph-keymap  tm/randomise-keymap
       ))
 
 (def platform-map
@@ -65,7 +65,7 @@
     "    "
     " ---"
     "  - "]
-   tm/strs->keymap tm/remap-keymap
+   tm/strs->keymap  tm/randomise-keymap tm/remaph-keymap
    ))
 
 (def platform2-map
@@ -73,7 +73,7 @@
    [
     "    "
     " ---"]
-   tm/strs->keymap tm/remap-keymap))
+   tm/strs->keymap  tm/randomise-keymap tm/remaph-keymap))
 
 (def sprite-sheet-layout
   {
@@ -127,7 +127,7 @@
            :origins {:stats :bottom-left
                      :title :top}
            :translate {:stats [40 -40]
-                       :title [0 40]}}))
+                       :title [0 90]}}))
 
 (s/set-default-scale! 1)
 

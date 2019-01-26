@@ -7,8 +7,11 @@
 
 (defn key-for [c]
   (case c
-    "-" :dirt-1
-    " " :space))
+    "-" :dirt
+    " " :space
+    "t" :clover
+    "." :grass
+    "X" :grassy))
 
 (defn strs->keymap [strs]
   (mapv #(mapv key-for %) strs))
@@ -19,9 +22,9 @@
 (defn get-tile-at [tm x y]
   (get-in tm [y x]))
 
-(def not-passable? #{:dirt-1 :dirt-2 :dirt-3})
+(def not-passable? #{:dirt-1 :dirt-2 :dirt-3 :grassy-left :grassy :grassy-right})
 (def passable? (comp not not-passable?))
-(def not-walkable? #{:dirt-1 :dirt-2 :dirt-3})
+(def not-walkable? #{:dirt-1 :dirt-2 :dirt-3 :grassy-left :grassy :grassy-right})
 (def walkable? (comp not not-walkable?))
 
 (defn remap [y-1 y y+1]
@@ -42,6 +45,21 @@
          [_ _ _]
          y))
 
+(defn remaph [x-1 x x+1]
+  (match [x-1 x x+1]
+
+         ;; grass left edge
+         [(_ :guard (complement #{:grassy})) :grassy _]
+         :grassy-left
+
+         ;; grass right edge
+         [_ :grassy (_ :guard (complement #{:grassy}))]
+         :grassy-right
+
+         ;; default leave tile
+         [_ _ _]
+         x))
+
 (defn mapv-mapv [ss f]
   (mapv (fn [line]
           (mapv (fn [ch]
@@ -59,6 +77,18 @@
                           bottom (get-in keymap [(inc y) x])]
                       (remap top tile bottom)))
                   (range width)))
+          (range height))))
+
+(defn remaph-keymap [keymap]
+  (let [height (count keymap)
+        width (count (first keymap))]
+    (mapv (fn [y]
+            (mapv (fn [x]
+                    (let [left (get-in keymap [y (dec x)])
+                          tile (get-in keymap [y x])
+                          right (get-in keymap [y (inc x)])]
+                      (remaph left tile right)))
+                  (range width)))
            (range height))))
 
 (defn randomise-keymap [keymap]
@@ -70,8 +100,11 @@
                           tile (get-in keymap [y x])
                           ]
                       (case tile
-                        :dirt-1
+                        :dirt
                         (rand-nth [:dirt-1 :dirt-2 :dirt-3])
+
+                        :grass
+                        (rand-nth [:grass-1 :grass-2 :grass-3])
 
                         tile)
                       ))
@@ -83,8 +116,15 @@
         tile-lookup
         {
          :dirt-1 [0 0]
-         :dirt-2 [64 0]
-         :dirt-3 [128 0]
+         :dirt-2 [(* 1 64) 0]
+         :dirt-3 [(* 2 64) 0]
+         :grassy-left [(* 5 64) 0]
+         :grassy [(* 6 64) 0]
+         :grassy-right [(* 7 64) 0]
+         :clover [(* 3 64) (* 2 64)]
+         :grass-1 [(* 0 64) (* 2 64)]
+         :grass-2 [(* 1 64) (* 2 64)]
+         :grass-3 [(* 2 64) (* 2 64)]
          }
         ]
     (->> tile-lookup
