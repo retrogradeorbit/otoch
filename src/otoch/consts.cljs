@@ -11,3 +11,4 @@
 (def jump-frames 10)
 
 (def gravity (vec2/vec2 0 0.01))
+(def blood-gravity (vec2/vec2 0 0.001))
