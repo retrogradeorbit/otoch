@@ -17,6 +17,8 @@
 
 (defonce enemies (atom {}))
 
+#_ @enemies
+
 (defn add! [ekey enemy]
   (swap! enemies assoc ekey enemy))
 
@@ -26,26 +28,45 @@
 (defn count-enemies []
   (count @enemies))
 
+(defn collided?
+  "given the players pos, find the first collided enemy"
+  [player-pos]
+  (->>
+   (for [[k {:keys [pos]}] @enemies]
+     (let [distance-squared (vec2/magnitude-squared (vec2/sub player-pos pos))]
+       (when (< distance-squared 0.5)
+         k)))
+   (map identity)
+   first))
+
 (def reverse-dir
   {:left :right
    :right :left})
 
 (def speed 0.0005)
 
+(defn wobble [y n]
+  (+ y (* 4 (Math/sin (/ n 12))))
+  )
+
 (defn spawn [container start-pos]
   (go
     (let [ekey (keyword (gensym))
-          skey [:enemy ekey]
           start-frame 0]
       (c/with-sprite container
         [enemy (s/make-sprite :enemy :pos (vec2/scale start-pos 64))]
-
+        (swap! enemies assoc ekey {:pos (vec2/scale start-pos 64)} )
         (loop [n 0
                p start-pos
                v (vec2/zero)
                facing :left
                ]
-          (s/set-pos! enemy (vec2/scale p 64))
+          (let [ppos (vec2/scale p 64)
+                [x y] ppos
+                y (wobble y n)
+                ]
+            (swap! enemies assoc-in [ekey :pos] (vec2/scale (vec2/vec2 x y) (/ 1 64)))
+            (s/set-pos! enemy x y))
           (s/set-scale! enemy (if (= :left facing) 1 -1) 1)
           (<! (e/next-frame))
           (if true ;;(< n 3000)

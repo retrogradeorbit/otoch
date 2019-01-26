@@ -630,18 +630,39 @@
                 :right (s/set-scale! player 1 1)
                 )
 
-              (recur
-               next-state
-               (inc fnum)
-               old-vel
-               con-pos
-               jump-pressed
-               new-gold
-               new-dynamite
-               (e/is-pressed? :x)
-               (case (Math/sign joy-dx)
-                 -1 :left
-                 0 facing
-                 1 :right
-                 )
-               ))))))))
+              ;; have we collided with any enemies?
+              (let [die? (enemy/collided? con-pos)]
+                (if-not die?
+                  (recur
+                   next-state
+                   (inc fnum)
+                   old-vel
+                   con-pos
+                   jump-pressed
+                   new-gold
+                   new-dynamite
+                   (e/is-pressed? :x)
+                   (case (Math/sign joy-dx)
+                     -1 :left
+                     0 facing
+                     1 :right
+                     ))
+
+                  ;; you get hit by enemy
+                  nil)))))
+
+        ;; dying
+        (loop [n 60]
+          (<! (e/next-frame))
+          (when (pos? n)
+            (recur (dec n))))
+
+        ;; dead
+        (s/set-alpha! player 0)
+        (loop [n 300]
+          (<! (e/next-frame))
+          (when (pos? n)
+            (recur (dec n))))
+
+
+        ))))
