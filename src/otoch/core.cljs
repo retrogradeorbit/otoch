@@ -12,6 +12,11 @@
             [clojure.string :as string]
             [otoch.line :as line]
             [otoch.map :as tm]
+            [otoch.consts :as consts]
+            [otoch.state :as state]
+            [otoch.constraints :as constraints]
+            [otoch.platforms :as platforms]
+            [otoch.enemy :as enemy]
             [cljs.core.async :refer [chan close! >! <! timeout]]
 )
   (:require-macros [cljs.core.async.macros :refer [go]]
@@ -37,53 +42,13 @@
 
 (defonce bg-colour 0xb8f3e8)
 
-(def tile-map
-  (-> [
-       "-----------------------------------------------------------------------------------"
-       "-         -            -               ,.  t.                         -------------"
-       "- -   -      -                       XXXXXXXXX                        -------------"
-       "-        -          -       t ,,  ..,                                 -------------"
-       "- -            -            XXXXXXXXXX                                -------------"
-       "-       -        .   , .  t                                           -------------"
-       "-  -             XXXXXXXXXXXX                                         -------------"
-       "-                                                      c    C         -------------"
-       "---------    ----------------------               ---------------------------------"
-       "---------    --------------------------       -------------------------------------"
-       "---------    --------------------          ----------------------------------------"
-       "---------    ------------          ------------------------------------------------"
-       "---------                   -------------------------------------------------------"
-       "---------        ------------------------------------------------------------------"
-       "---------     ---------------------------------------------------------------------"
-       "-----------------------------------------------------------------------------------"
-       ]
-      tm/strs->keymap tm/remaph-keymap  tm/randomise-keymap
-      ))
-
-(def platform-map
-  (->
-   [
-    "    "
-    " ---"
-    "  - "]
-   tm/strs->keymap  tm/randomise-keymap tm/remaph-keymap
-   ))
-
-(def platform2-map
-  (->
-   [
-    "    "
-    " ---"]
-   tm/strs->keymap  tm/randomise-keymap tm/remaph-keymap))
-
 (def sprite-sheet-layout
   {
-   :dynamite-1 {:size [64 64] :pos [0 0]}
-   :dynamite-2 {:size [64 64] :pos [64 0]}
-   :dynamite-3 {:size [64 64] :pos [128 0]}
-   :dynamite-4 {:size [64 64] :pos [64 0]}
-   :dynamite-5 {:size [64 64] :pos [0 0]}
+   :rune-1 {:pos [(* 3 64) (* 9 64)] :size [64 64]}
 
    :megalith {:size [64 64] :pos [(* 4 64) (* 2 64)]}
+
+   :enemy {:size [64 64] :pos [(* 64 3) (* 64 7)]}
 
    :explosion-1 {:size [16 16] :pos [48 48]}
    :explosion-2 {:size [16 16] :pos [64 48]}
@@ -100,29 +65,12 @@
    bg-map-lines
    (fn [c]
      (cond
-       (#{:clover :grass-fg-1 :grass-fg-2 :grass-fg-3 :cactus-fg} c)
+       (#{:clover :grass-fg-1 :grass-fg-2 :grass-fg-3 :cactus-fg :reeds-fg} c)
        c
 
        ;;(= c :ladder-top) :ladder-top-fg
        :default :space))))
 
-(defn not-passable? [x y]
-  (tm/not-passable? (tm/get-tile-at tile-map x y)))
-
-(def passable? (comp not not-passable?))
-
-(defn not-platform-passable? [x y]
-  (tm/not-passable? (tm/get-tile-at platform-map x y)))
-
-(def platform-passable? (comp not not-platform-passable?))
-
-(defn not-platform2-passable? [x y]
-  (tm/not-passable? (tm/get-tile-at platform2-map x y)))
-
-(def platform2-passable? (comp not not-platform2-passable?))
-
-(defn walkable? [x y]
-  (tm/walkable? (tm/get-tile-at tile-map x y)))
 
 (defonce canvas
   (c/init {:layers [:bg :tilemap :stats :title :ui]
@@ -140,10 +88,6 @@
    player
    (+ x (* 16 4 px)) (+ y (* 16 4 py))))
 
-(def h-edge 0.3)
-(def minus-h-edge (- 1 h-edge))
-(def v-edge 0.45)
-(def minus-v-edge (- 1 v-edge))
 
 (defn hollow
   "if vector is less than a certain size, make it zero"
@@ -152,33 +96,12 @@
     (vec2/zero)
     v))
 
-(def jump-accel-1 0.1)
-(def jump-accel-2+ 0.03)
-(def jump-frames 10)
-
 (defn jump-button-pressed? []
   (or
    (e/is-pressed? :z)
    (e/is-pressed? :space)
    (gp/button-pressed? 0 :x)))
 
-(defn platform-constrain [pass? pos old-pos new-pos]
-  (line/constrain-offset
-   {:passable? pass?
-    :h-edge h-edge
-    :v-edge v-edge
-    :minus-h-edge minus-h-edge
-    :minus-v-edge minus-v-edge}
-   pos new-pos old-pos))
-
-(defn dynamite-constrain [pass? pos old-pos new-pos]
-  (line/constrain-offset
-   {:passable? pass?
-    :h-edge 0.1
-    :v-edge 0.3
-    :minus-h-edge 0.9
-    :minus-v-edge 0.5}
-   pos new-pos old-pos))
 
 ;; work out if we are standing on a platform, and if
 ;; so, which one?  to do this, we simulate the
@@ -195,8 +118,8 @@
         end2 (vec2/add old-pos (vec2/vec2 0 0.3))]
     (loop [n 0]
       (let [{:keys [passable? platform-pos]} (nth plats n)]
-        (if (= (vec2/get-y (platform-constrain passable? platform-pos start end1))
-               (vec2/get-y (platform-constrain passable? platform-pos start end2)))
+        (if (= (vec2/get-y (constraints/platform-constrain passable? platform-pos start end1))
+               (vec2/get-y (constraints/platform-constrain passable? platform-pos start end2)))
           n
           (when (< n (dec num))
             (recur (inc n))))))))
@@ -221,67 +144,12 @@
             (recur res)))))
     c))
 
-(def platforms
-  [{:name :level
-    :fn (fn [_] (vec2/zero))
-    :passable? walkable?
-    :apply? (fn [_] true)}
-
-   {:name :t-platform
-    :fn (fn [fnum] (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ fnum 60))))))
-    :passable? platform-passable?
-    :apply? (fn [pos] (let [x (vec2/get-x pos)
-                            y (vec2/get-y pos)]
-                        (and
-                         (<= 8 x 15)
-                         (<= 4 y 14))))}
-
-   #_ {:name :diagonal
-    :fn (fn [fnum] (vec2/vec2 (+ 56 (* 3 (Math/sin (/ fnum 40))))
-                              (+ 23 (* 3 (Math/sin (/ fnum 40))))))
-    :passable? platform2-passable?
-    :apply? (fn [pos]
-              (let [x (vec2/get-x pos)
-                    y (vec2/get-y pos)]
-                (and
-                 (<= 50 x 65)
-                 (<= 17 y 29))))}
-
-   #_ {:name :horizontal
-    :fn (fn [fnum] (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20))
-    :passable? platform2-passable?
-    :apply? (fn [pos]
-              (let [x (vec2/get-x pos)
-                    y (vec2/get-y pos)]
-                (and
-                 (<= 59 x 70)
-                 (<= 19 y 22))))}])
-
-(defn constrain-pos [constrain-fn platforms old-pos new-pos]
-  (reduce
-   (fn [pos {:keys [passable? platform-pos]}]
-     (constrain-fn passable? platform-pos old-pos pos))
-   new-pos platforms))
-
-(defn prepare-platforms [platforms fnum]
-  (->> platforms
-       (mapv #(let [platform-pos ((:fn %) fnum)
-                   old-platform-pos ((:fn %) (dec fnum))]
-               (assoc %
-                      :platform-pos platform-pos
-                      :old-platform-pos old-platform-pos
-                      :platform-delta (vec2/sub platform-pos old-platform-pos))))))
-
-(defn filter-platforms [platforms pos]
-  (->> platforms
-       (filterv #((:apply? %) pos))))
-
 (def gravity (vec2/vec2 0 0.01))
 
 (defn make-dynamite [container pos vel start-frame]
   (go
     (c/with-sprite container
-      [sprite (s/make-sprite :dynamite-5 :scale 1 :x (vec2/get-x pos) :y (vec2/get-y pos))]
+      [sprite (s/make-sprite :rune-1 :scale 0.5 :yhandle 0 :x (vec2/get-x pos) :y (vec2/get-y pos))]
       (let [final-pos (loop [n 0
                              p pos
                              v vel]
@@ -290,20 +158,20 @@
                         (if (< n 300)
                           ;; still alive
                           (do
-                            (let [frame (int (/ n 60))
-                                  texture (get [:dynamite-5 :dynamite-4 :dynamite-3 :dynamite-2 :dynamite-1] frame :dynamite-5)]
+                            #_ (let [frame (int (/ n 60))
+                                  texture :rune-1]
                               (s/set-texture! sprite (t/get-texture texture)))
 
                             (let [platform-state
-                                  (-> platforms
-                                      (prepare-platforms n)
-                                      (filter-platforms (vec2/zero)))
+                                  (-> platforms/platforms
+                                      (platforms/prepare-platforms n)
+                                      (platforms/filter-platforms (vec2/zero)))
                                   new-pos
-                                  (constrain-pos
-                                   dynamite-constrain
-                                   (-> platforms
-                                       (prepare-platforms (+ 1 start-frame n))
-                                       (filter-platforms p))
+                                  (constraints/constrain-pos
+                                   constraints/dynamite-constrain
+                                   (-> platforms/platforms
+                                       (platforms/prepare-platforms (+ 1 start-frame n))
+                                       (platforms/filter-platforms p))
                                    p (vec2/add p v))
                                   new-vel (-> new-pos
                                               (vec2/sub p)
@@ -318,6 +186,8 @@
 
         ;; megalith rise
         (s/set-texture! sprite :megalith)
+        (s/set-scale! sprite 1)
+        (s/set-anchor-y! sprite 0.5)
 
         (let [[final-pos final-vel] (loop [n 300
                                            p final-pos
@@ -329,15 +199,15 @@
 
                                       (if (< n (+ 300 600))
                                         (let [platform-state
-                                                 (-> platforms
-                                                     (prepare-platforms n)
-                                                     (filter-platforms (vec2/zero)))
+                                                 (-> platforms/platforms
+                                                     (platforms/prepare-platforms n)
+                                                     (platforms/filter-platforms (vec2/zero)))
                                                  new-pos
-                                                 (constrain-pos
-                                                  dynamite-constrain
-                                                  (-> platforms
-                                                      (prepare-platforms (+ 1 start-frame n))
-                                                      (filter-platforms p))
+                                                 (constraints/constrain-pos
+                                                  constraints/dynamite-constrain
+                                                  (-> platforms/platforms
+                                                      (platforms/prepare-platforms (+ 1 start-frame n))
+                                                      (platforms/filter-platforms p))
                                                   p (vec2/add p v))
                                                  new-vel (-> new-pos
                                                              (vec2/sub p)
@@ -360,15 +230,15 @@
             (<! (e/next-frame))
 
             (let [platform-state
-                  (-> platforms
-                      (prepare-platforms n)
-                      (filter-platforms (vec2/zero)))
+                  (-> platforms/platforms
+                      (platforms/prepare-platforms n)
+                      (platforms/filter-platforms (vec2/zero)))
                   new-pos
-                  (constrain-pos
-                   dynamite-constrain
-                   (-> platforms
-                       (prepare-platforms (+ 1 start-frame n))
-                       (filter-platforms p))
+                  (constraints/constrain-pos
+                   constraints/dynamite-constrain
+                   (-> platforms/platforms
+                       (platforms/prepare-platforms (+ 1 start-frame n))
+                       (platforms/filter-platforms p))
                    p (vec2/add p v))
                   new-vel (-> new-pos
                               (vec2/sub p)
@@ -442,9 +312,9 @@
     (let [tile-set (tm/make-tile-set :tiles)
           stand (t/sub-texture (r/get-texture :tiles :nearest) [0 (* 4 96)] [64 64])
           walk (t/sub-texture (r/get-texture :tiles :nearest) [(* 4 16) (* 4 96)] [64 64])
-          tilemap-order-lookup (tm/make-tiles-struct tile-set tile-map)
+          tilemap-order-lookup (tm/make-tiles-struct tile-set tm/tile-map)
 
-          dynamite (make-text-display :dynamite-5 0 :numbers 10)
+          dynamite (make-text-display :rune-1 0 :numbers 10)
           gold (make-text-display :gold -64 :numbers 0)
           ]
 
@@ -470,14 +340,14 @@
          dynamites (s/make-container :scale 1 :particle false)
 
          tilemap (s/make-container
-                  :children (tm/make-tiles tile-set tile-map)
+                  :children (tm/make-tiles tile-set tm/tile-map)
                   :xhandle 0 :yhandle 0
                   :scale 1
                   ;;:particle true
                   ;;:particle-opts #{:alpha}
                   )
          platform (s/make-container
-                   :children (tm/make-tiles tile-set platform-map)
+                   :children (tm/make-tiles tile-set platforms/platform-map)
                    ;; :xhandle 0 :yhandle 0
                    :scale 1
                    ;;:particle true
@@ -494,14 +364,19 @@
          ;;            :particle true)
          player (s/make-sprite stand :scale 1)
          foreground (s/make-container
-                     :children (tm/make-tiles tile-set (into [] (make-foreground-map tile-map)))
+                     :children (tm/make-tiles tile-set (into [] (make-foreground-map tm/tile-map)))
                      ;;:xhandle 0 :yhandle 0
                      :scale 1
                      ;;:particle true
                      )
 
+         enemies (s/make-container)
+
 
          ]
+
+        (enemy/spawn enemies (vec2/vec2 20 5))
+
         ;;(s/set-scale! background 1)
         (loop [
                state :walking
@@ -539,10 +414,10 @@
                                          :default 0)
                                    ))
 
-                platforms-this-frame (prepare-platforms platforms fnum)
+                platforms-this-frame (platforms/prepare-platforms platforms/platforms fnum)
 
                 ;; platform subset for player
-                filtered-platforms (filter-platforms
+                filtered-platforms (platforms/filter-platforms
                                     platforms-this-frame old-pos)
                 ]
 
@@ -569,16 +444,22 @@
 
 
             (s/set-pos! foreground x y)
+
             #_ (s/set-pos! background
                            (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
                            (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
 
+            ;; save level pos so other go blocks can access
+            ;; (swap! state/state assoc :pos (vec2/vec2 x y))
+
+            (s/set-pos! enemies x y)
+
             (<! (e/next-frame))
                                         ;(log dy minus-v-edge)
             (let [
-                  square-on (tm/get-tile-at tile-map pix piy)
-                  square-below (tm/get-tile-at tile-map pix (inc piy))
-                  square-standing-on (tm/get-tile-at tile-map pix
+                  square-on (tm/get-tile-at tm/tile-map pix piy)
+                  square-below (tm/get-tile-at tm/tile-map pix (inc piy))
+                  square-standing-on (tm/get-tile-at tm/tile-map pix
                                                      (int (+ 0.3 py)))
 
                   on-ladder-transition? (or (= square-on :ladder)
@@ -622,7 +503,7 @@
                   ;; simulate a little vertical move down to see if we are
                   ;; standing on solid ground (or a platform)
                   fallen-pos
-                  (constrain-pos platform-constrain filtered-platforms
+                  (constraints/constrain-pos constraints/platform-constrain filtered-platforms
                                  old-pos (vec2/add old-pos (vec2/vec2 0 0.1)))
 
                   ;; TODO: this is dodgy. We need to test with each platform.
@@ -640,11 +521,11 @@
                                  :default
                                  0)
 
-                  jump-force (if (and (<= 1 jump-pressed jump-frames)
+                  jump-force (if (and (<= 1 jump-pressed consts/jump-frames)
                                       (jump-button-pressed?))
                                (vec2/vec2 0 (- (if (= 1 jump-pressed)
-                                                 jump-accel-1
-                                                 jump-accel-2+)))
+                                                 consts/jump-accel-1
+                                                 consts/jump-accel-2+)))
                                (vec2/zero))
 
                   joy-dy (-> joy
@@ -693,8 +574,8 @@
                                (if on-ladder? state :walking))
 
                   passable-fn (if (= :walking next-state)
-                                walkable?
-                                passable?)
+                                platforms/walkable?
+                                platforms/passable?)
 
                   new-vel (-> old-vel
                               ;; zero any y vel in the last frames vel if we are climbing
@@ -712,7 +593,7 @@
                               (vec2/add new-vel))
 
                   con-pos
-                  (constrain-pos platform-constrain
+                  (constraints/constrain-pos constraints/platform-constrain
                                  (assoc-in filtered-platforms [0 :passable?] passable-fn)
                                  old-pos new-pos)
 
