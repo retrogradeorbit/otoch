@@ -16,6 +16,7 @@
             [otoch.state :as state]
             [otoch.constraints :as constraints]
             [otoch.platforms :as platforms]
+            [otoch.particle :as particle]
             [otoch.enemy :as enemy]
             [cljs.core.async :refer [chan close! >! <! timeout]]
 )
@@ -40,7 +41,7 @@
 )
 
 
-(defonce bg-colour 0xb8f3e8)
+(defonce bg-colour 0x60a0c0)
 
 (def sprite-sheet-layout
   {
@@ -49,6 +50,46 @@
    :megalith {:size [64 64] :pos [(* 4 64) (* 2 64)]}
 
    :enemy {:size [64 64] :pos [(* 64 3) (* 64 7)]}
+
+   :star-1 {:size [16 16] :pos [64 (* 9 64)]}
+   :star-2 {:size [16 16] :pos [(+ 16 64) (* 9 64)]}
+   :star-3 {:size [16 16] :pos [(+ 32 64) (* 9 64)]}
+   :star-4 {:size [16 16] :pos [(+ 48 64) (* 9 64)]}
+
+   :star-5 {:size [16 16] :pos [64 (+ 16 (* 9 64))]}
+   :star-6 {:size [16 16] :pos [(+ 16 64) (+ 16 (* 9 64))]}
+   :star-7 {:size [16 16] :pos [(+ 32 64) (+ 16 (* 9 64))]}
+   :star-8 {:size [16 16] :pos [(+ 48 64) (+ 16 (* 9 64))]}
+
+   :star-9 {:size [16 16] :pos [64 (+ 32 (* 9 64))]}
+   :star-10 {:size [16 16] :pos [(+ 16 64) (+ 32 (* 9 64))]}
+   :star-11 {:size [16 16] :pos [(+ 32 64) (+ 32 (* 9 64))]}
+   :star-12 {:size [16 16] :pos [(+ 48 64) (+ 32 (* 9 64))]}
+
+   :star-13 {:size [16 16] :pos [64 (+ 48 (* 9 64))]}
+   :star-14 {:size [16 16] :pos [(+ 16 64) (+ 48 (* 9 64))]}
+   :star-15 {:size [16 16] :pos [(+ 32 64) (+ 48 (* 9 64))]}
+   :star-16 {:size [16 16] :pos [(+ 48 64) (+ 48 (* 9 64))]}
+
+   :blood-1 {:size [16 16] :pos [128 (* 9 64)]}
+   :blood-2 {:size [16 16] :pos [(+ 16 128) (* 9 64)]}
+   :blood-3 {:size [16 16] :pos [(+ 32 128) (* 9 64)]}
+   :blood-4 {:size [16 16] :pos [(+ 48 128) (* 9 64)]}
+
+   :blood-5 {:size [16 16] :pos [128 (+ 16 (* 9 64))]}
+   :blood-6 {:size [16 16] :pos [(+ 16 128) (+ 16 (* 9 64))]}
+   :blood-7 {:size [16 16] :pos [(+ 32 128) (+ 16 (* 9 64))]}
+   :blood-8 {:size [16 16] :pos [(+ 48 128) (+ 16 (* 9 64))]}
+
+   :blood-9 {:size [16 16] :pos [128 (+ 32 (* 9 64))]}
+   :blood-10 {:size [16 16] :pos [(+ 16 128) (+ 32 (* 9 64))]}
+   :blood-11 {:size [16 16] :pos [(+ 32 128) (+ 32 (* 9 64))]}
+   :blood-12 {:size [16 16] :pos [(+ 48 128) (+ 32 (* 9 64))]}
+
+   :blood-13 {:size [16 16] :pos [128 (+ 48 (* 9 64))]}
+   :blood-14 {:size [16 16] :pos [(+ 16 128) (+ 48 (* 9 64))]}
+   :blood-15 {:size [16 16] :pos [(+ 32 128) (+ 48 (* 9 64))]}
+   :blood-16 {:size [16 16] :pos [(+ 48 128) (+ 48 (* 9 64))]}
 
    :explosion-1 {:size [16 16] :pos [48 48]}
    :explosion-2 {:size [16 16] :pos [64 48]}
@@ -65,7 +106,7 @@
    bg-map-lines
    (fn [c]
      (cond
-       (#{:clover :grass-fg-1 :grass-fg-2 :grass-fg-3 :cactus-fg :reeds-fg} c)
+       (#{:clover :grass-fg-1 :grass-fg-2 :grass-fg-3 :cactus-fg :reeds-fg :nubby-fg} c)
        c
 
        ;;(= c :ladder-top) :ladder-top-fg
@@ -279,7 +320,9 @@
     ;; load image tilesets
     (<! (r/load-resources canvas :ui ["img/tiles.png"
                                       "img/fonts.png"
-                                      "img/title.png"]))
+                                      "img/title.png"
+                                      "img/background-1.png"
+                                      "img/background-2.png"]))
 
     ;; load textures
     (t/load-sprite-sheet! (r/get-texture :tiles) sprite-sheet-layout)
@@ -347,11 +390,21 @@
 
       ;; create sprite and tile map batches
       (c/with-sprite canvas :tilemap
-        [ ;; background (js/PIXI.TilingSprite.
-         ;;             (t/sub-texture
-         ;;              (r/get-texture :tiles :nearest)
-         ;;              [0 48] [32 32])
-         ;;             1000 1000)
+        [
+         background-2 (js/PIXI.TilingSprite.
+                       (t/sub-texture
+                        (r/get-texture :background-2 :nearest)
+                        [0 0] [1024 1024])
+                       10000 10000)
+
+
+         background (js/PIXI.TilingSprite.
+                     (t/sub-texture
+                      (r/get-texture :background-1 :nearest)
+                      [0 0] [1024 1024])
+                     10000 10000)
+
+
 
          dynamites (s/make-container :scale 1 :particle false)
 
@@ -393,7 +446,8 @@
 
         (enemy/spawn enemies (vec2/vec2 43 0))
 
-        ;;(s/set-scale! background 1)
+        (s/set-scale! background 1)
+        (s/set-scale! background-2 1)
         (loop [
                state :walking
                fnum 0
@@ -462,9 +516,13 @@
 
             (s/set-pos! foreground (int x) (int y))
 
-            #_ (s/set-pos! background
-                           (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
-                           (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
+            (s/set-pos! background
+                        (+ -5000 (mod (int (* x 0.90)) 1024))
+                        (+ -5000 (mod (int (* y 0.90)) 1024)))
+
+            (s/set-pos! background-2
+                        (+ -5000 (mod (int (* x 0.80)) 1024))
+                        (+ -5000 (mod (int (* y 0.80)) 1024)))
 
             ;; save level pos so other go blocks can access
             ;; (swap! state/state assoc :pos (vec2/vec2 x y))
@@ -521,7 +579,7 @@
                   ;; standing on solid ground (or a platform)
                   fallen-pos
                   (constraints/constrain-pos constraints/platform-constrain filtered-platforms
-                                 old-pos (vec2/add old-pos (vec2/vec2 0 0.1)))
+                                             old-pos (vec2/add old-pos (vec2/vec2 0 0.1)))
 
                   ;; TODO: this is dodgy. We need to test with each platform.
                   ;; if we are standing on a platform, we are "bound to it"
@@ -611,8 +669,8 @@
 
                   con-pos
                   (constraints/constrain-pos constraints/platform-constrain
-                                 (assoc-in filtered-platforms [0 :passable?] passable-fn)
-                                 old-pos new-pos)
+                                             (assoc-in filtered-platforms [0 :passable?] passable-fn)
+                                             old-pos new-pos)
 
                   old-vel (if (= :walking state) (vec2/sub con-pos old-pos)
                               (-> (vec2/sub con-pos old-pos)
@@ -620,11 +678,11 @@
 
                   new-dynamite
                   (if (and (pos? new-dynamite) (not last-x-pressed?) (e/is-pressed? :x))
-                       (do (make-dynamite
-                            dynamites ppos old-vel fnum)
-                           (>! dynamite (dec new-dynamite))
-                           (dec new-dynamite))
-                       new-dynamite)]
+                    (do (make-dynamite
+                         dynamites ppos old-vel fnum)
+                        (>! dynamite (dec new-dynamite))
+                        (dec new-dynamite))
+                    new-dynamite)]
               (case facing
                 :left (s/set-scale! player -1 1)
                 :right (s/set-scale! player 1 1)
@@ -632,7 +690,7 @@
 
               ;; have we collided with any enemies?
               (let [die? (enemy/collided? con-pos)]
-                (if-not die?
+                (if-not (or die? (e/is-pressed? :q))
                   (recur
                    next-state
                    (inc fnum)
@@ -649,20 +707,35 @@
                      ))
 
                   ;; you get hit by enemy
-                  nil)))))
+                  (do
 
-        ;; dying
-        (loop [n 60]
-          (<! (e/next-frame))
-          (when (pos? n)
-            (recur (dec n))))
+                    ;; particles
+                    (doseq [n (range 32)]
+                      (let [vel (vec2/add
+                                 (vec2/scale (vec2/add (vec2/random)
+                                                       (vec2/vec2 0 -0.3)
+                                                       ) 0.1)
+                                 (vec2/scale old-vel 0.33)
+                                 )]
+                        (js/console.log (str vel))
+                        (particle/spawn enemies
+                                        (rand-nth [:blood-1 :blood-2 :blood-3 :blood-4
+                                                   :blood-5 :blood-6 :blood-7 :blood-8
+                                                   :blood-9 :blood-10 :blood-11 :blood-12
+                                                   :blood-13 :blood-14 :blood-15 :blood-16
+                                                   ])
+                                        (inc fnum)
+                                        (vec2/scale con-pos 1)
+                                        vel
+                                        (/ (- (rand) 0.5) 3)
+                                        )))
 
-        ;; dead
-        (s/set-alpha! player 0)
-        (loop [n 300]
-          (<! (e/next-frame))
-          (when (pos? n)
-            (recur (dec n))))
+                    ;; dead
+                    (s/set-alpha! player 0)
+                    (loop [n 300]
+                      (<! (e/next-frame))
+                      (when (pos? n)
+                        (recur (dec n))))))))))
 
 
         ))))

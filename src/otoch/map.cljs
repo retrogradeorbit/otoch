@@ -17,7 +17,9 @@
     "C" :cactus-fg
     "c" :cactus
     "R" :reeds-fg
-    "r" :reeds))
+    "r" :reeds
+    "N" :nubby-fg
+    "n" :nubby))
 
 (defn strs->keymap [strs]
   (mapv #(mapv key-for %) strs))
@@ -28,24 +30,33 @@
 (defn get-tile-at [tm x y]
   (get-in tm [y x]))
 
-(def not-passable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7})
+(def not-passable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11 :dirt-top-1 :dirt-top-2 :dirt-top-3})
 (def passable? (comp not not-passable?))
-(def not-walkable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7})
+(def not-walkable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11 :dirt-top-1 :dirt-top-2 :dirt-top-3})
 (def walkable? (comp not not-walkable?))
 
-(defn remap [y-1 y y+1]
+(def all-dirt
+  #{:dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11})
+
+(defn remapv [y-1 y y+1]
+  (js/console.log y-1 y y+1)
   (match [y-1 y y+1]
-         ;; put top-bottom rocks tiles where the rocks is solo
-         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :rocks (b :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
-         :rocks-top-bottom
+         ;; ;; put top-bottom rocks tiles where the rocks is solo
+         ;; [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :rocks (b :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
+         ;; :rocks-top-bottom
 
-         ;; put bottom rocks tiles where the rocks ends
-         [_ :rocks (t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
-         :rocks-bottom
+         ;; ;; put bottom rocks tiles where the rocks ends
+         ;; [_ :rocks (t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
+         ;; :rocks-bottom
 
-         ;; put top rocks tiles at the top edges
-         [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :rocks _]
-         :rocks-top
+         ;; ;; put top rocks tiles at the top edges
+         ;; [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :rocks _]
+         ;; :rocks-top
+
+         [(_ :guard (complement all-dirt))
+          (_ :guard all-dirt)
+          _]
+         (rand-nth [:dirt-top-1 :dirt-top-2 :dirt-top-3])
 
          ;; default: dont change tile
          [_ _ _]
@@ -62,6 +73,22 @@
          [_ :grassy (_ :guard (complement #{:grassy}))]
          :grassy-right
 
+         [:dirt-11
+          (_ :guard all-dirt)
+          _]
+         (rand-nth [:dirt-2 :dirt-4 :dirt-6 :dirt-7 :dirt-8 :dirt-1 :dirt-3 :dirt-5])
+
+         [:dirt-2
+          (_ :guard all-dirt)
+          _]
+         (rand-nth [:dirt-4 :dirt-6 :dirt-7 :dirt-8 :dirt-1 :dirt-3 :dirt-5])
+
+         [:dirt-4
+          (_ :guard all-dirt)
+          _]
+         (rand-nth [:dirt-2 :dirt-6 :dirt-7 :dirt-8 :dirt-1 :dirt-3 :dirt-5])
+
+
          ;; default leave tile
          [_ _ _]
          x))
@@ -73,7 +100,7 @@
                 line))
         ss))
 
-(defn remap-keymap [keymap]
+(defn remapv-keymap [keymap]
   (let [height (count keymap)
         width (count (first keymap))]
     (mapv (fn [y]
@@ -81,7 +108,7 @@
                     (let [top (get-in keymap [(dec y) x])
                           tile (get-in keymap [y x])
                           bottom (get-in keymap [(inc y) x])]
-                      (remap top tile bottom)))
+                      (remapv top tile bottom)))
                   (range width)))
           (range height))))
 
@@ -119,16 +146,26 @@
 
                         :dirt
                         (rand-nth
-                         [:dirt-1
-                          :dirt-2 :dirt-2
-                          :dirt-3
-                          :dirt-4 :dirt-4
-                          :dirt-5
-                          :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6
-                          :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6
-                          :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7
-                          :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7
+                         [;; :dirt-1
+                          ;; :dirt-2 :dirt-2
+                          ;; :dirt-3
+                          ;; :dirt-4 :dirt-4
+                          ;; :dirt-5
+                          ;; :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6
+                          ;; :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6
+                          ;; :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7
+                          ;; :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7
 
+
+                          :dirt-9 :dirt-10
+                          :dirt-9 :dirt-10
+                          :dirt-9 :dirt-10
+                          :dirt-9 :dirt-10
+                          :dirt-9 :dirt-10
+                          :dirt-9 :dirt-10
+
+                          :dirt-11
+                          :dirt-2
                           ])
 
                         tile)
@@ -150,6 +187,14 @@
          :dirt-5 [(* 4 64) 64]
          :dirt-6 [(* 5 64) 64]
          :dirt-7 [(* 6 64) 64]
+         :dirt-8 [(* 7 64) 64]
+         :dirt-9 [(* 8 64) 64]
+         :dirt-10 [(* 9 64) 64]
+         :dirt-11 [(* 10 64) 64]
+
+         :dirt-top-1 [(* 9 64) 0]
+         :dirt-top-2 [(* 10 64) 0]
+         :dirt-top-3 [(* 11 64) 0]
 
          :grassy-left [(* 5 64) 0]
          :grassy [(* 6 64) 0]
@@ -165,7 +210,8 @@
          :cactus-fg [(* 4 64) (* 2 64)]
          :reeds [(* 5 64) (* 2 64)]
          :reeds-fg [(* 5 64) (* 2 64)]
-
+         :nubby [(* 6 64) (* 2 64)]
+         :nubby-fg [(* 6 64) (* 2 64)]
 
          }
         ]
@@ -212,8 +258,8 @@ is at a location [x y]. keys are positions. values are nth index"
        "-        -     ---          XXXXXXXXXX                                -------------"
        "-      ---       - r , .  t                                           -------------"
        "-                XXXXXXXXXXXX                                         -------------"
-       "-                     -                                c    C         -------------"
-       "+++  ++++    ++++++++++++++++++++++               +++++++++++++++++++++++++++++++++"
+       "-              n      -                                c    C         -------------"
+       "+++  ++++    ++++++++++++++++++++++  N            +++++++++++++++++++++++++++++++++"
        "++++  +++    ++++++++++++++++++++++++++       +++++++++++++++++++++++++++++++++++++"
        "+++++  ++    ++++++++++++++++++++          ++++++++++++++++++++++++++++++++++++++++"
        "++++++  +    ++++++++++++          ++++++++++++++++++++++++++++++++++++++++++++++++"
@@ -222,5 +268,5 @@ is at a location [x y]. keys are positions. values are nth index"
        "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
        "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
        ]
-      strs->keymap remaph-keymap randomise-keymap
+      strs->keymap randomise-keymap remaph-keymap remapv-keymap
       ))
