@@ -6,6 +6,8 @@
 
   :min-lein-version "2.7.1"
 
+  :jvm-opts ["-server" "-Dconf=.lein-env" "-Xss2m"]
+
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/clojurescript "1.10.238"]
                  [org.clojure/core.async  "0.4.474"]

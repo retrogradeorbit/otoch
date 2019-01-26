@@ -35,44 +35,29 @@
 )
 
 
-(defonce bg-colour 0x202000)
+(defonce bg-colour 0x62e7cd)
 
 (def tile-map
   (-> [
-"------------------------XXXXX------------------------------------------------------"
-"-                         b X                                     b   -------------"
-"-         c     ----XXXXXXXXX                               X/XXXXXX  ---      ----"
-"-       ----        X                       c                |        --        ---"
-"-                   X                    ----          p     |p  c    --      bb---"
-"-    c              X                b   ----      ---------------------   bbb-----"
-"---------           X               ----          --                   bbbb--------"
-"-                   X               ----         --- ------b-----------------------"
-"-                   Xb   c    p     ---              -  ---b-----------------------"
-"-                   XXX/XXXXXXXXXXXX---         ------  ---b-----------------   |--"
-"-            -      X  |                                ---b------------bbbbbbb |--"
-"-           --      X  |                                ---b------------------- |--"
-"------------------- X  | XXXXX                          ---b---     ----------- |--"
-"--------.o----  bbb    |  0                      b                  ----------- |--"
-"-     -------------XX  XXXXX X X X            XXXXXXXX/X            ----        |--"
-"-       -----------Xpbb 0                             |   b b       ---- bbbb------"
-"----/      ---XXXXXXXXXXXX                          XXXXXXXXXXXX    ---- ----------"
-"-   |         Xbb     Xbb              /              |             ---- ----------"
-"-   |         XXXXXXX XXXXXXX X XX     |              |             ----        ---"
-"- p |     X   X   c      Xc      X     |              |             ------- bbbb---"
-"--------/-----X XXXXXXX XXXXXX XXX     |     p        |             ------- bbbb---"
-"--------|--.o-  X    c    X      X     |----------------                    bbbb---"
-"--------|-----XXX XXXXXXXXXXXXXX X     |-----------o----            ---------------"
-"-       |       X   X   X    c   X     |--    ----------            ---------------"
-"-       |       XXX X X bX XXXXXXX     |--    ----------            ---------------"
-"-       ------ bX      XX  X     X     |--       |------            ---------------"
-"-b      --------X XXX XXX XX XXX X-    --   -----|------            ---------------"
-"---         --.-X  bX  c     Xb  X------   ------|------           ----------------"
-"-           ----XX XXXXXXXXXXXXXXX-----   ---    |                 ----------------"
-"- c    b               p      c          ----    X               ------------------"
-"-----------------------------------------------------------------------------------"
-"-----------------------------------------------------------------------------------"
+       "-----------------------------------------------------------------------------------"
+       "-         -            -                                              -------------"
+       "- -   -      -                       -                                -------------"
+       "-        -          -                                                 -------------"
+       "- -            -              -                                       -------------"
+       "-       -            -                                                -------------"
+       "-  -             -          -                                         -------------"
+       "-                                                                     -------------"
+       "---------    ----------------------               ---------------------------------"
+       "---------    --------------------------       -------------------------------------"
+       "---------    --------------------          ----------------------------------------"
+       "---------    ------------          ------------------------------------------------"
+       "---------                   -------------------------------------------------------"
+       "---------        ------------------------------------------------------------------"
+       "---------     ---------------------------------------------------------------------"
+       "-----------------------------------------------------------------------------------"
        ]
-      tm/strs->keymap tm/remap-keymap))
+      tm/strs->keymap tm/randomise-keymap ;;tm/remap-keymap
+      ))
 
 (def platform-map
   (->
@@ -87,7 +72,7 @@
   (->
    [
     "    "
-    " XXX"]
+    " ---"]
    tm/strs->keymap tm/remap-keymap))
 
 (def sprite-sheet-layout
@@ -244,10 +229,10 @@
     :apply? (fn [pos] (let [x (vec2/get-x pos)
                             y (vec2/get-y pos)]
                         (and
-                         (<= 9 x 14)
-                         (<= 5 y 13))))}
+                         (<= 8 x 15)
+                         (<= 4 y 14))))}
 
-   {:name :diagonal
+   #_ {:name :diagonal
     :fn (fn [fnum] (vec2/vec2 (+ 56 (* 3 (Math/sin (/ fnum 40))))
                               (+ 23 (* 3 (Math/sin (/ fnum 40))))))
     :passable? platform2-passable?
@@ -258,7 +243,7 @@
                  (<= 50 x 65)
                  (<= 17 y 29))))}
 
-   {:name :horizontal
+   #_ {:name :horizontal
     :fn (fn [fnum] (vec2/vec2 (+ 62 (* 3 (Math/sin (/ fnum 60)))) 20))
     :passable? platform2-passable?
     :apply? (fn [pos]
@@ -337,79 +322,112 @@
 (defonce main
   (go
     ;; load image tilesets
-    (<! (r/load-resources canvas :ui ["img/tiles.png"]))
+    (<! (r/load-resources canvas :ui ["img/tiles.png"
+                                      "img/fonts.png"
+                                      "img/title.png"]))
 
     ;; load textures
     (t/load-sprite-sheet! (r/get-texture :tiles) sprite-sheet-layout)
+    (t/load-sprite-sheet! (r/get-texture :title)
+                          {:title {:pos [0 0]
+                                   :size [652 214]}})
 
     ;; make a number font
-    (pf/pixel-font :numbers "img/tiles.png" [0 128] [79 159]
-                   :chars "0123456789"
+    (pf/pixel-font :numbers "img/fonts.png" [10 10] [248 70]
+                   :chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#`'.,"
                    :space 5)
 
     ;; make a small pixelly font
-    (pf/pixel-font :pixel "img/tiles.png" [48 64] [120 83]
-                   :chars "ABCDEFGHIJKLMNOPQRSTUVWXYZ.!?0123456789+-$'\""
+    (pf/pixel-font :pixel "img/fonts.png" [10 10] [248 70]
+                   :chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#`'.,"
                    :space 3)
+
+    #_ (go
+         (c/with-sprite :title
+           [title (pf/make-text :pixel "OTOCH"
+                                :scale 4 :xhandle 0.5
+                                :tint 0xff8000)
+
+            ]
+           (loop []
+             (<! (e/next-frame))
+             (recur))))
 
     (go
       (c/with-sprite :title
-        [title (pf/make-text :pixel "OTOCH"
-                             :scale 4 :xhandle 0.5)
-
-         ]
+        [title (s/make-sprite :title
+                              :scale 1
+                              :xhandle 0.5
+                              :yhandle 0.5
+                              :alpha 1.0)]
         (loop []
           (<! (e/next-frame))
-          (recur))))
+          (recur)))
+      )
 
     ;; make the tile texture lookup
-    #_ (let [tile-set (tm/make-tile-set :tiles)
-          stand (t/sub-texture (r/get-texture :tiles :nearest) [0 96] [16 16])
-          walk (t/sub-texture (r/get-texture :tiles :nearest) [16 96] [16 16])
+    (let [tile-set (tm/make-tile-set :tiles)
+          stand (t/sub-texture (r/get-texture :tiles :nearest) [0 (* 4 96)] [64 64])
+          walk (t/sub-texture (r/get-texture :tiles :nearest) [(* 4 16) (* 4 96)] [64 64])
           tilemap-order-lookup (tm/make-tiles-struct tile-set tile-map)
 
           dynamite (make-text-display :dynamite-5 0 :numbers 10)
           gold (make-text-display :gold -64 :numbers 0)
           ]
 
+      #_(c/with-sprite canvas :tilemap
+          [tilemap  (s/make-container
+                     :children (tm/make-tiles tile-set tile-map)
+                     :xhandle 0 :yhandle 0
+                     :scale 1
+                     :particle true
+                     :particle-opts #{:alpha})]
+
+
+          )
+
+      (js/console.log (str tile-map))
+
       ;; create sprite and tile map batches
       (c/with-sprite canvas :tilemap
-        [background (js/PIXI.TilingSprite.
-                     (t/sub-texture
-                      (r/get-texture :tiles :nearest)
-                      [0 48] [32 32])
-                     1000 1000)
+        [ ;; background (js/PIXI.TilingSprite.
+         ;;             (t/sub-texture
+         ;;              (r/get-texture :tiles :nearest)
+         ;;              [0 48] [32 32])
+         ;;             1000 1000)
          tilemap (s/make-container
                   :children (tm/make-tiles tile-set tile-map)
                   :xhandle 0 :yhandle 0
-                  :scale 4
-                  :particle true
-                  :particle-opts #{:alpha})
+                  :scale 1
+                  ;;:particle true
+                  ;;:particle-opts #{:alpha}
+                  )
          platform (s/make-container
                    :children (tm/make-tiles tile-set platform-map)
                    :xhandle 0 :yhandle 0
-                   :scale 4
-                   :particle true)
-         platform2 (s/make-container
-                    :children (tm/make-tiles tile-set platform2-map)
-                    :xhandle 0 :yhandle 0
-                    :scale 4
-                    :particle true)
-         platform3 (s/make-container
-                    :children (tm/make-tiles tile-set platform2-map)
-                    :xhandle 0 :yhandle 0
-                    :scale 4
-                    :particle true)
-         player (s/make-sprite stand :scale 4)
-         foreground (s/make-container
-                     :children (tm/make-tiles tile-set (into [] (make-foreground-map tile-map)))
-                     :xhandle 0 :yhandle 0
-                     :scale 4
-                     :particle true)
-         dynamites (s/make-container :scale 4 :particle false)
+                   :scale 1
+                   ;;:particle true
+                   )
+         ;; platform2 (s/make-container
+         ;;            :children (tm/make-tiles tile-set platform2-map)
+         ;;            :xhandle 0 :yhandle 0
+         ;;            :scale 1
+         ;;            :particle true)
+         ;; platform3 (s/make-container
+         ;;            :children (tm/make-tiles tile-set platform2-map)
+         ;;            :xhandle 0 :yhandle 0
+         ;;            :scale 1
+         ;;            :particle true)
+         player (s/make-sprite stand :scale 1)
+         ;; foreground (s/make-container
+         ;;             :children (tm/make-tiles tile-set (into [] (make-foreground-map tile-map)))
+         ;;             :xhandle 0 :yhandle 0
+         ;;             :scale 1
+         ;;             :particle true)
+         ;;dynamites (s/make-container :scale 1 :particle false)
 
          ]
-        (s/set-scale! background 4)
+        ;;(s/set-scale! background 1)
         (loop [
                state :walking
                fnum 0
@@ -458,22 +476,38 @@
                               (if (zero? (mod (int (/ fnum 10)) 2)) stand walk)
                               stand))
             (set-player player x y px py)
-            (s/set-pos! dynamites x y)
+            ;; (s/set-pos! dynamites x y)
+
+            ;;(js/console.log "===>" (str platforms-this-frame))
 
             ;; set tilemap positions
             (doall
              (map
-              (fn [{:keys [old-platform-pos]} obj]
-                (s/set-pos! obj (vec2/add
-                                 (vec2/scale old-platform-pos (* 4 16))
-                                 (vec2/vec2 x y))))
-              platforms-this-frame
-              [tilemap platform platform2 platform3]))
+              (fn [{:keys [name old-platform-pos]} obj]
+                (let [pos (-> old-platform-pos
+                              (vec2/scale (* 4 16))
+                              (vec2/add (vec2/vec2 x y)))]
+                  (s/set-pos!
+                   obj
 
-            (s/set-pos! foreground x y)
-            (s/set-pos! background
-                        (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
-                        (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
+                   ;; DIRTY HACK TO MOVE PLATFORMS BY ONE TILE BUT NOT THE LEVEL!
+                   (if (= :level name)
+                     pos
+                     (vec2/add pos (vec2/vec2 64 64))
+                     ))))
+              platforms-this-frame
+              [tilemap platform ;;platform2 platform3
+               ]))
+
+            #_ (let [x (- (rand 2000) 1000)
+                     y (- (rand 2000) 1000)]
+                 (js/console.log x y)
+                 (s/set-pos! tilemap (vec2/vec2 x y)))
+
+            #_ (s/set-pos! foreground x y)
+            #_ (s/set-pos! background
+                           (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
+                           (+ -2000 (mod (int (* y 0.90)) ( * 4 32))))
 
             (<! (e/next-frame))
                                         ;(log dy minus-v-edge)
@@ -510,6 +544,8 @@
                   ladder-down? (#{:ladder :ladder-top} square-below)
 
                   plat (which-platform? old-pos filtered-platforms)
+
+                  ;;_ (js/console.log "PLAT:" plat)
 
                   ;; move oldpos by platform movement
                   old-pos (if plat
@@ -620,16 +656,16 @@
                               (-> (vec2/sub con-pos old-pos)
                                   (vec2/set-y 0)))
 
-                  new-dynamite
-                  (if (and (pos? new-dynamite) (not last-x-pressed?) (e/is-pressed? :x))
-                    (do (make-dynamite
-                         dynamites ppos old-vel fnum)
-                        (>! dynamite (dec new-dynamite))
-                        (dec new-dynamite))
-                    new-dynamite)]
+                  #_ new-dynamite
+                  #_ (if (and (pos? new-dynamite) (not last-x-pressed?) (e/is-pressed? :x))
+                       (do (make-dynamite
+                            dynamites ppos old-vel fnum)
+                           (>! dynamite (dec new-dynamite))
+                           (dec new-dynamite))
+                       new-dynamite)]
               (case facing
-                :left (s/set-scale! player -4 4)
-                :right (s/set-scale! player 4 4)
+                :left (s/set-scale! player -1 1)
+                :right (s/set-scale! player 1 1)
                 )
 
               (recur
