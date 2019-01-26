@@ -144,6 +144,19 @@
             (recur res)))))
     c))
 
+(defn megalith-set-pos! [sprite pos]
+  (let [
+        spos (vec2/scale pos 64)
+        [x y] spos]
+    (s/set-pos! sprite
+;                spos
+                (int x) (int y)
+                )))
+
+(defn megalith-fn [start-frame n]
+  (+ 3 start-frame n)
+  )
+
 (defn make-dynamite [container pos vel start-frame]
   (go
     (c/with-sprite container
@@ -151,7 +164,7 @@
       (let [final-pos (loop [n 0
                              p pos
                              v vel]
-                        (s/set-pos! sprite (vec2/scale p 64))
+                        (megalith-set-pos! sprite p)
                         (<! (e/next-frame))
                         (if (< n 300)
                           ;; still alive
@@ -168,7 +181,7 @@
                                   (constraints/constrain-pos
                                    constraints/dynamite-constrain
                                    (-> platforms/platforms
-                                       (platforms/prepare-platforms (+ 1 start-frame n))
+                                       (platforms/prepare-platforms (megalith-fn start-frame n))
                                        (platforms/filter-platforms p))
                                    p (vec2/add p v))
                                   new-vel (-> new-pos
@@ -192,9 +205,8 @@
                                            v (vec2/zero)
                                            rise 1
                                            ]
-                                      (let [new-pos (vec2/scale (vec2/add p (vec2/vec2 0 rise)) 64)
-                                            [x y] new-pos]
-                                        (s/set-pos! sprite (int x) (int y) ))
+                                      (megalith-set-pos! sprite (vec2/add p (vec2/vec2 0 rise)))
+
                                       (<! (e/next-frame))
 
                                       (if (< n (+ 300 600))
@@ -206,7 +218,7 @@
                                                  (constraints/constrain-pos
                                                   constraints/dynamite-constrain
                                                   (-> platforms/platforms
-                                                      (platforms/prepare-platforms (+ 1 start-frame n))
+                                                      (platforms/prepare-platforms (megalith-fn start-frame n))
                                                       (platforms/filter-platforms p))
                                                   p (vec2/add p v))
                                                  new-vel (-> new-pos
@@ -226,7 +238,7 @@
                  p final-pos
                  v final-vel
                  ]
-            (s/set-pos! sprite (vec2/scale (vec2/add p (vec2/vec2 0 0)) 64))
+            (megalith-set-pos! sprite p)
             (<! (e/next-frame))
 
             (let [platform-state
@@ -237,7 +249,7 @@
                   (constraints/constrain-pos
                    constraints/dynamite-constrain
                    (-> platforms/platforms
-                       (platforms/prepare-platforms (+ 1 start-frame n))
+                       (platforms/prepare-platforms (megalith-fn start-frame n))
                        (platforms/filter-platforms p))
                    p (vec2/add p v))
                   new-vel (-> new-pos
