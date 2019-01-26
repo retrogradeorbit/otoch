@@ -6,6 +6,7 @@
             [infinitelives.pixi.pixelfont :as pf]
             [infinitelives.utils.events :as e]
             [infinitelives.utils.gamepad :as gp]
+            [infinitelives.utils.sound :as sound]
             [infinitelives.utils.vec2 :as vec2]
             [infinitelives.utils.console :refer [log]]
             [cljs.core.match :refer-macros [match]]
@@ -202,6 +203,7 @@
   )
 
 (defn make-dynamite [container pos vel start-frame]
+  (sound/play-sound :runethrow 0.5 false)
   (go
     (c/with-sprite container
       [sprite (s/make-sprite :rune-1 :scale 0.5 :yhandle 0 :x (vec2/get-x pos) :y (vec2/get-y pos))]
@@ -240,6 +242,7 @@
                           p))]
 
         ;; megalith rise
+        (sound/play-sound :monolith 0.5 false)
         (s/set-texture! sprite :megalith)
         (s/set-scale! sprite 1)
         (s/set-anchor-y! sprite 0.5)
@@ -253,7 +256,7 @@
 
                                       (<! (e/next-frame))
 
-                                      (if (< n (+ 300 600))
+                                      (if (< n (+ 300 300))
                                         (let [platform-state
                                                  (-> platforms/platforms
                                                      (platforms/prepare-platforms n)
@@ -272,13 +275,13 @@
                                              (recur (inc n)
                                                     new-pos
                                                     new-vel
-                                                    (- rise (/ 1 600))))
+                                                    (- rise (/ 1 300))))
 
                                         [p v]))]
 
           ;; megalith runs forever
           (loop [
-                 n (+ 600 300)
+                 n (+ 300 300)
                  p final-pos
                  v final-vel
                  ]
@@ -325,7 +328,14 @@
                                       "img/fonts.png"
                                       "img/title.png"
                                       "img/background-1.png"
-                                      "img/background-2.png"]))
+                                      "img/background-2.png"
+                                      "sfx/collect.ogg"
+                                      "sfx/death.ogg"
+                                      "sfx/jump.ogg"
+                                      "sfx/monolith.ogg"
+                                      "sfx/runethrow.ogg"
+                                      "sfx/thud.ogg"
+                                      "music/arabian.ogg"]))
 
     ;; load textures
     (t/load-sprite-sheet! (r/get-texture :tiles) sprite-sheet-layout)
@@ -369,6 +379,8 @@
             (when (< n 150)
               (recur (+ n 0.1))))))
       )
+
+    (sound/play-sound :arabian 0.5 true)
 
     ;; make the tile texture lookup
     (let [tile-set (tm/make-tile-set :tiles)
@@ -465,6 +477,7 @@
                ]
 
           (let [
+                original-vel old-vel
                 old-pos ppos
                 pos (-> ppos
                         (vec2/scale (* -2 32)))
@@ -687,6 +700,14 @@
                         (>! dynamite (dec new-dynamite))
                         (dec new-dynamite))
                     new-dynamite)]
+
+              (when (and (jump-button-pressed?) standing-on-ground?)
+                (sound/play-sound :jump 0.5 false))
+
+              (when (> (vec2/magnitude-squared (vec2/sub original-vel old-vel)) 0.01)
+                (sound/play-sound :thud 0.2 false)
+                )
+
               (case facing
                 :left (s/set-scale! player -1 1)
                 :right (s/set-scale! player 1 1)
@@ -712,6 +733,7 @@
 
                   ;; you get hit by enemy
                   (do
+                    (sound/play-sound :death 0.5 false)
 
                     ;; particles
                     (doseq [n (range 32)]
