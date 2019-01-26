@@ -19,7 +19,8 @@
     "R" :reeds-fg
     "r" :reeds
     "N" :nubby-fg
-    "n" :nubby))
+    "n" :nubby
+    "B" :block))
 
 (defn strs->keymap [strs]
   (mapv #(mapv key-for %) strs))
@@ -30,9 +31,9 @@
 (defn get-tile-at [tm x y]
   (get-in tm [y x]))
 
-(def not-passable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11 :dirt-top-1 :dirt-top-2 :dirt-top-3})
+(def not-passable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11 :dirt-top-1 :dirt-top-2 :dirt-top-3 :block-1 :block-2 :block-3 :block-4 :block-5})
 (def passable? (comp not not-passable?))
-(def not-walkable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11 :dirt-top-1 :dirt-top-2 :dirt-top-3})
+(def not-walkable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11 :dirt-top-1 :dirt-top-2 :dirt-top-3 :block-1 :block-2 :block-3 :block-4 :block-5})
 (def walkable? (comp not not-walkable?))
 
 (def all-dirt
@@ -144,19 +145,21 @@
                                    :grass-fg-2
                                    :grass-fg-3])
 
+                        :block
+                        (rand-nth [:block-1 :block-1 :block-1 :block-1 :block-1
+                                   :block-1 :block-1 :block-1 :block-1 :block-1
+                                   :block-1 :block-1 :block-1 :block-1 :block-1
+                                   :block-2 :block-2 :block-2
+                                   :block-3 :block-3 :block-3
+                                   :block-4 :block-4 :block-4
+                                   :block-5 :block-5 :block-5
+                                   :rocks-1
+                                   :rocks-2
+                                   :rocks-3])
+
                         :dirt
                         (rand-nth
-                         [;; :dirt-1
-                          ;; :dirt-2 :dirt-2
-                          ;; :dirt-3
-                          ;; :dirt-4 :dirt-4
-                          ;; :dirt-5
-                          ;; :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6
-                          ;; :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6 :dirt-6
-                          ;; :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7
-                          ;; :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7 :dirt-7
-
-
+                         [
                           :dirt-9 :dirt-10
                           :dirt-9 :dirt-10
                           :dirt-9 :dirt-10
@@ -164,14 +167,21 @@
                           :dirt-9 :dirt-10
                           :dirt-9 :dirt-10
 
-                          :dirt-11
+                          :dirt-1
                           :dirt-2
+                          :dirt-3
+                          :dirt-4
+                          :dirt-5
+                          :dirt-6
+                          :dirt-7
+                          :dirt-8
+                          :dirt-11
                           ])
 
                         tile)
                       ))
                   (range width)))
-           (range height))))
+          (range height))))
 
 (defn make-tile-set [resource-key]
   (let [texture (r/get-texture resource-key :nearest)
@@ -213,6 +223,13 @@
          :nubby [(* 6 64) (* 2 64)]
          :nubby-fg [(* 6 64) (* 2 64)]
 
+         :block-1 [(* 0 64) (* 4 64)]
+         :block-2 [(* 1 64) (* 4 64)]
+         :block-3 [(* 2 64) (* 4 64)]
+         :block-4 [(* 3 64) (* 4 64)]
+         :block-5 [(* 4 64) (* 4 64)]
+
+
          }
         ]
     (->> tile-lookup
@@ -251,14 +268,14 @@ is at a location [x y]. keys are positions. values are nth index"
 
 (def tile-map
   (-> [
-       "-                      -                                              -------------"
-       "-        ---------------               ,.  t.                         -------------"
-       "-        -   -                       XXXXXXXXX                        -------------"
-       "-        -                  t ,, R..,                                 -------------"
-       "-        -     ---          XXXXXXXXXX                                -------------"
-       "-      ---       - r , .  t                                           -------------"
-       "-                XXXXXXXXXXXX                                         -------------"
-       "-              n      -                                c    C         -------------"
+       "B                      B                                              -------------"
+       "B        BBBBBBBBBBBBBBB               ,.  t.                         -------------"
+       "B        B   B                       XXXXXXXXX                        -------------"
+       "B        B                  t ,, R..,                                 -------------"
+       "B        B     BBB          XXXXXXXXXX                                -------------"
+       "B      BBB       B r , .  t                                           -------------"
+       "B                XXXXXXXXXXXX                                         -------------"
+       "B              n      -                                c    C         -------------"
        "+++  ++++    ++++++++++++++++++++++  N            +++++++++++++++++++++++++++++++++"
        "++++  +++    ++++++++++++++++++++++++++       +++++++++++++++++++++++++++++++++++++"
        "+++++  ++    ++++++++++++++++++++          ++++++++++++++++++++++++++++++++++++++++"
