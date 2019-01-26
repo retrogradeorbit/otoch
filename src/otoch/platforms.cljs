@@ -6,8 +6,7 @@
   (->
    [
     "    "
-    " ---"
-    "  - "]
+    " ---"]
    tm/strs->keymap  tm/randomise-keymap tm/remaph-keymap
    ))
 
@@ -44,7 +43,10 @@
     :apply? (fn [_] true)}
 
    {:name :t-platform
-    :fn (fn [fnum] (vec2/vec2 9 (+ 7 (* 2.01 (Math/sin (/ fnum 60))))))
+    :fn (fn [fnum]
+          (let [x 9
+                y (+ 7 (* 2.01 (Math/sin (/ fnum 60))))]
+            (vec2/vec2 (/ (int (* 64 x)) 64) (/ (int (* 64 y)) 64))))
     :passable? platform-passable?
     :apply? (fn [pos] (let [x (vec2/get-x pos)
                             y (vec2/get-y pos)]

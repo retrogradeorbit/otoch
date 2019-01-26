@@ -25,3 +25,12 @@
     :minus-h-edge 0.9
     :minus-v-edge 0.5}
    pos new-pos old-pos))
+
+(defn enemy-constrain [pass? pos old-pos new-pos]
+  (line/constrain-offset
+   {:passable? pass?
+    :h-edge 0.3
+    :v-edge 0.3
+    :minus-h-edge 0.7
+    :minus-v-edge 0.5}
+   pos new-pos old-pos))

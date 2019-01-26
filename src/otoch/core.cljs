@@ -144,7 +144,18 @@
             (recur res)))))
     c))
 
-(def gravity (vec2/vec2 0 0.01))
+(defn megalith-set-pos! [sprite pos]
+  (let [
+        spos (vec2/scale pos 64)
+        [x y] spos]
+    (s/set-pos! sprite
+;                spos
+                (int x) (int y)
+                )))
+
+(defn megalith-fn [start-frame n]
+  (+ 3 start-frame n)
+  )
 
 (defn make-dynamite [container pos vel start-frame]
   (go
@@ -153,7 +164,7 @@
       (let [final-pos (loop [n 0
                              p pos
                              v vel]
-                        (s/set-pos! sprite (vec2/scale p 64))
+                        (megalith-set-pos! sprite p)
                         (<! (e/next-frame))
                         (if (< n 300)
                           ;; still alive
@@ -170,12 +181,12 @@
                                   (constraints/constrain-pos
                                    constraints/dynamite-constrain
                                    (-> platforms/platforms
-                                       (platforms/prepare-platforms (+ 1 start-frame n))
+                                       (platforms/prepare-platforms (megalith-fn start-frame n))
                                        (platforms/filter-platforms p))
                                    p (vec2/add p v))
                                   new-vel (-> new-pos
                                               (vec2/sub p)
-                                              (vec2/add gravity)
+                                              (vec2/add consts/gravity)
                                               (vec2/scale 0.98))]
                               (recur (inc n)
                                      new-pos
@@ -194,9 +205,8 @@
                                            v (vec2/zero)
                                            rise 1
                                            ]
-                                      (let [new-pos (vec2/scale (vec2/add p (vec2/vec2 0 rise)) 64)
-                                            [x y] new-pos]
-                                        (s/set-pos! sprite (int x) (int y) ))
+                                      (megalith-set-pos! sprite (vec2/add p (vec2/vec2 0 rise)))
+
                                       (<! (e/next-frame))
 
                                       (if (< n (+ 300 600))
@@ -208,12 +218,12 @@
                                                  (constraints/constrain-pos
                                                   constraints/dynamite-constrain
                                                   (-> platforms/platforms
-                                                      (platforms/prepare-platforms (+ 1 start-frame n))
+                                                      (platforms/prepare-platforms (megalith-fn start-frame n))
                                                       (platforms/filter-platforms p))
                                                   p (vec2/add p v))
                                                  new-vel (-> new-pos
                                                              (vec2/sub p)
-                                                             (vec2/add gravity)
+                                                             (vec2/add consts/gravity)
                                                              (vec2/scale 0.98))]
                                              (recur (inc n)
                                                     new-pos
@@ -228,7 +238,7 @@
                  p final-pos
                  v final-vel
                  ]
-            (s/set-pos! sprite (vec2/scale (vec2/add p (vec2/vec2 0 0)) 64))
+            (megalith-set-pos! sprite p)
             (<! (e/next-frame))
 
             (let [platform-state
@@ -239,12 +249,12 @@
                   (constraints/constrain-pos
                    constraints/dynamite-constrain
                    (-> platforms/platforms
-                       (platforms/prepare-platforms (+ 1 start-frame n))
+                       (platforms/prepare-platforms (megalith-fn start-frame n))
                        (platforms/filter-platforms p))
                    p (vec2/add p v))
                   new-vel (-> new-pos
                               (vec2/sub p)
-                              (vec2/add gravity)
+                              (vec2/add consts/gravity)
                               (vec2/scale 0.98))]
               (recur (inc n)
                      new-pos
@@ -381,7 +391,7 @@
 
          ]
 
-        (enemy/spawn enemies (vec2/vec2 20 5))
+        (enemy/spawn enemies (vec2/vec2 43 0))
 
         ;;(s/set-scale! background 1)
         (loop [
@@ -442,14 +452,15 @@
               (fn [{:keys [name old-platform-pos]} obj]
                 (let [pos (-> old-platform-pos
                               (vec2/scale (* 4 16))
-                              (vec2/add (vec2/vec2 x y)))]
-                  (s/set-pos! obj pos)))
+                              (vec2/add (vec2/vec2 x y)))
+                      [x y] pos]
+                  (s/set-pos! obj (int x) (int y))))
               platforms-this-frame
               [tilemap platform ;;platform2 platform3
                ]))
 
 
-            (s/set-pos! foreground x y)
+            (s/set-pos! foreground (int x) (int y))
 
             #_ (s/set-pos! background
                            (+ -2000 (mod (int (* x 0.90)) (* 4 32)))
@@ -458,7 +469,7 @@
             ;; save level pos so other go blocks can access
             ;; (swap! state/state assoc :pos (vec2/vec2 x y))
 
-            (s/set-pos! enemies x y)
+            (s/set-pos! enemies (int x) (int y))
 
             (<! (e/next-frame))
                                         ;(log dy minus-v-edge)
@@ -587,7 +598,7 @@
                               ;; zero any y vel in the last frames vel if we are climbing
                               (vec2/set-y (if (= state :climbing) 0 (vec2/get-y old-vel)))
                               ;; no gravity on you when you are on the stairs
-                              (vec2/add (if (= state :climbing) (vec2/zero) gravity))
+                              (vec2/add (if (= state :climbing) (vec2/zero) consts/gravity))
 
                               (vec2/add jump-force)
                               (vec2/add joy-acc)
@@ -619,18 +630,39 @@
                 :right (s/set-scale! player 1 1)
                 )
 
-              (recur
-               next-state
-               (inc fnum)
-               old-vel
-               con-pos
-               jump-pressed
-               new-gold
-               new-dynamite
-               (e/is-pressed? :x)
-               (case (Math/sign joy-dx)
-                 -1 :left
-                 0 facing
-                 1 :right
-                 )
-               ))))))))
+              ;; have we collided with any enemies?
+              (let [die? (enemy/collided? con-pos)]
+                (if-not die?
+                  (recur
+                   next-state
+                   (inc fnum)
+                   old-vel
+                   con-pos
+                   jump-pressed
+                   new-gold
+                   new-dynamite
+                   (e/is-pressed? :x)
+                   (case (Math/sign joy-dx)
+                     -1 :left
+                     0 facing
+                     1 :right
+                     ))
+
+                  ;; you get hit by enemy
+                  nil)))))
+
+        ;; dying
+        (loop [n 60]
+          (<! (e/next-frame))
+          (when (pos? n)
+            (recur (dec n))))
+
+        ;; dead
+        (s/set-alpha! player 0)
+        (loop [n 300]
+          (<! (e/next-frame))
+          (when (pos? n)
+            (recur (dec n))))
+
+
+        ))))
