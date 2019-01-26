@@ -46,7 +46,7 @@
        "- -            -            XXXXXXXXXX                                -------------"
        "-       -        .   , .  t                                           -------------"
        "-  -             XXXXXXXXXXXX                                         -------------"
-       "-                                                                     -------------"
+       "-                                                      c    C         -------------"
        "---------    ----------------------               ---------------------------------"
        "---------    --------------------------       -------------------------------------"
        "---------    --------------------          ----------------------------------------"
@@ -77,11 +77,13 @@
 
 (def sprite-sheet-layout
   {
-   :dynamite-1 {:size [16 16] :pos [112 32]}
-   :dynamite-2 {:size [16 16] :pos [96 32]}
-   :dynamite-3 {:size [16 16] :pos [80 32]}
-   :dynamite-4 {:size [16 16] :pos [64 32]}
-   :dynamite-5 {:size [16 16] :pos [48 32]}
+   :dynamite-1 {:size [64 64] :pos [0 0]}
+   :dynamite-2 {:size [64 64] :pos [64 0]}
+   :dynamite-3 {:size [64 64] :pos [128 0]}
+   :dynamite-4 {:size [64 64] :pos [64 0]}
+   :dynamite-5 {:size [64 64] :pos [0 0]}
+
+   :megalith {:size [64 64] :pos [(* 4 64) (* 2 64)]}
 
    :explosion-1 {:size [16 16] :pos [48 48]}
    :explosion-2 {:size [16 16] :pos [64 48]}
@@ -98,7 +100,7 @@
    bg-map-lines
    (fn [c]
      (cond
-       (#{:clover :grass-foreground-1 :grass-foreground-2 :grass-foreground-3} c)
+       (#{:clover :grass-fg-1 :grass-fg-2 :grass-fg-3 :cactus-fg} c)
        c
 
        ;;(= c :ladder-top) :ladder-top-fg
@@ -280,45 +282,114 @@
   (go
     (c/with-sprite container
       [sprite (s/make-sprite :dynamite-5 :scale 1 :x (vec2/get-x pos) :y (vec2/get-y pos))]
-      (loop [n 0
-             p pos
-             v vel]
-        (s/set-pos! sprite (vec2/scale p 16))
-        (<! (e/next-frame))
-        (when (< n 300)
-          (if (pos? (mod n 3))
-            (let [frame (int (/ n 60))
-                  texture (nth [:dynamite-5 :dynamite-4 :dynamite-3 :dynamite-2 :dynamite-1] frame)]
-              (s/set-texture! sprite (t/get-texture texture)))
-            (s/set-texture! sprite (t/get-texture :dynamite-1)))
-          (let [platform-state
-                (-> platforms
-                    (prepare-platforms n)
-                    (filter-platforms (vec2/zero)))
-                new-pos
-                (constrain-pos
-                 dynamite-constrain
-                 (-> platforms
-                     (prepare-platforms (+ 1 start-frame n))
-                     (filter-platforms p))
-                 p (vec2/add p v))
-                new-vel (-> new-pos
-                            (vec2/sub p)
-                            (vec2/add gravity)
-                            (vec2/scale 0.98))]
-            (recur (inc n)
-                   new-pos
-                   new-vel))))
+      (let [final-pos (loop [n 0
+                             p pos
+                             v vel]
+                        (s/set-pos! sprite (vec2/scale p 64))
+                        (<! (e/next-frame))
+                        (if (< n 300)
+                          ;; still alive
+                          (do
+                            (let [frame (int (/ n 60))
+                                  texture (get [:dynamite-5 :dynamite-4 :dynamite-3 :dynamite-2 :dynamite-1] frame :dynamite-5)]
+                              (s/set-texture! sprite (t/get-texture texture)))
+
+                            (let [platform-state
+                                  (-> platforms
+                                      (prepare-platforms n)
+                                      (filter-platforms (vec2/zero)))
+                                  new-pos
+                                  (constrain-pos
+                                   dynamite-constrain
+                                   (-> platforms
+                                       (prepare-platforms (+ 1 start-frame n))
+                                       (filter-platforms p))
+                                   p (vec2/add p v))
+                                  new-vel (-> new-pos
+                                              (vec2/sub p)
+                                              (vec2/add gravity)
+                                              (vec2/scale 0.98))]
+                              (recur (inc n)
+                                     new-pos
+                                     new-vel)))
+
+                          ;; rune over. return final pos
+                          p))]
+
+        ;; megalith rise
+        (s/set-texture! sprite :megalith)
+
+        (let [[final-pos final-vel] (loop [n 300
+                                           p final-pos
+                                           v (vec2/zero)
+                                           rise 1
+                                           ]
+                                      (s/set-pos! sprite (vec2/scale (vec2/add p (vec2/vec2 0 rise)) 64))
+                                      (<! (e/next-frame))
+
+                                      (if (< n (+ 300 600))
+                                        (let [platform-state
+                                                 (-> platforms
+                                                     (prepare-platforms n)
+                                                     (filter-platforms (vec2/zero)))
+                                                 new-pos
+                                                 (constrain-pos
+                                                  dynamite-constrain
+                                                  (-> platforms
+                                                      (prepare-platforms (+ 1 start-frame n))
+                                                      (filter-platforms p))
+                                                  p (vec2/add p v))
+                                                 new-vel (-> new-pos
+                                                             (vec2/sub p)
+                                                             (vec2/add gravity)
+                                                             (vec2/scale 0.98))]
+                                             (recur (inc n)
+                                                    new-pos
+                                                    new-vel
+                                                    (- rise (/ 1 600))))
+
+                                        [p v]))]
+
+          ;; megalith runs forever
+          (loop [
+                 n (+ 600 300)
+                 p final-pos
+                 v final-vel
+                 ]
+            (s/set-pos! sprite (vec2/scale (vec2/add p (vec2/vec2 0 0)) 64))
+            (<! (e/next-frame))
+
+            (let [platform-state
+                  (-> platforms
+                      (prepare-platforms n)
+                      (filter-platforms (vec2/zero)))
+                  new-pos
+                  (constrain-pos
+                   dynamite-constrain
+                   (-> platforms
+                       (prepare-platforms (+ 1 start-frame n))
+                       (filter-platforms p))
+                   p (vec2/add p v))
+                  new-vel (-> new-pos
+                              (vec2/sub p)
+                              (vec2/add gravity)
+                              (vec2/scale 0.98))]
+              (recur (inc n)
+                     new-pos
+                     new-vel
+                     ))))
+
+        )
 
       ;; explode
-      (loop [[f & r] [:explosion-1 :explosion-2
-                      :explosion-3 :explosion-4
-                      :explosion-5 :explosion-6]]
-        (s/set-texture! sprite (t/get-texture f))
-        (<! (e/next-frame))
-        (<! (e/next-frame))
-        (when r
-          (recur r))))))
+      #_ (loop [[f & r] [:explosion-1 :explosion-2
+                         :explosion-3 :explosion-4
+                         :explosion-5 :explosion-6]]
+           (s/set-texture! sprite (t/get-texture f))
+           (<! (e/next-frame))
+           (<! (e/next-frame))
+           (when r
+             (recur r))))))
 
 
 (defonce main
@@ -388,8 +459,6 @@
 
           )
 
-      (js/console.log (str tile-map))
-
       ;; create sprite and tile map batches
       (c/with-sprite canvas :tilemap
         [ ;; background (js/PIXI.TilingSprite.
@@ -397,6 +466,9 @@
          ;;              (r/get-texture :tiles :nearest)
          ;;              [0 48] [32 32])
          ;;             1000 1000)
+
+         dynamites (s/make-container :scale 1 :particle false)
+
          tilemap (s/make-container
                   :children (tm/make-tiles tile-set tile-map)
                   :xhandle 0 :yhandle 0
@@ -427,7 +499,7 @@
                      :scale 1
                      ;;:particle true
                      )
-         ;;dynamites (s/make-container :scale 1 :particle false)
+
 
          ]
         ;;(s/set-scale! background 1)
@@ -479,7 +551,7 @@
                               (if (zero? (mod (int (/ fnum 10)) 2)) stand walk)
                               stand))
             (set-player player x y px py)
-            ;; (s/set-pos! dynamites x y)
+            (s/set-pos! dynamites x y)
 
             ;;(js/console.log "===>" (str platforms-this-frame))
 
@@ -495,10 +567,6 @@
               [tilemap platform ;;platform2 platform3
                ]))
 
-            #_ (let [x (- (rand 2000) 1000)
-                     y (- (rand 2000) 1000)]
-                 (js/console.log x y)
-                 (s/set-pos! tilemap (vec2/vec2 x y)))
 
             (s/set-pos! foreground x y)
             #_ (s/set-pos! background
@@ -600,8 +668,6 @@
                   state-ladder? (and on-ladder-transition?
                                      (not (zero? joy-dy)))
 
-                  _ (js/console.log "jdx:" joy-dx)
-
                   joy-acc (if (= :climbing state)
                             (vec2/vec2 joy-dx (* 0.1 joy-dy))
                             (vec2/vec2 joy-dx 0))
@@ -654,8 +720,8 @@
                               (-> (vec2/sub con-pos old-pos)
                                   (vec2/set-y 0)))
 
-                  #_ new-dynamite
-                  #_ (if (and (pos? new-dynamite) (not last-x-pressed?) (e/is-pressed? :x))
+                  new-dynamite
+                  (if (and (pos? new-dynamite) (not last-x-pressed?) (e/is-pressed? :x))
                        (do (make-dynamite
                             dynamites ppos old-vel fnum)
                            (>! dynamite (dec new-dynamite))
