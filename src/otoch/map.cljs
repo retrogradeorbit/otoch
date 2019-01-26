@@ -11,8 +11,10 @@
     " " :space
     "t" :clover
     "." :grass
-    "," :grass-foreground
-    "X" :grassy))
+    "," :grass-fg
+    "X" :grassy
+    "C" :cactus-fg
+    "c" :cactus))
 
 (defn strs->keymap [strs]
   (mapv #(mapv key-for %) strs))
@@ -107,10 +109,10 @@
                         :grass
                         (rand-nth [:grass-1 :grass-2 :grass-3])
 
-                        :grass-foreground
-                        (rand-nth [:grass-foreground-1
-                                   :grass-foreground-2
-                                   :grass-foreground-3])
+                        :grass-fg
+                        (rand-nth [:grass-fg-1
+                                   :grass-fg-2
+                                   :grass-fg-3])
 
                         tile)
                       ))
@@ -131,10 +133,11 @@
          :grass-1 [(* 0 64) (* 2 64)]
          :grass-2 [(* 1 64) (* 2 64)]
          :grass-3 [(* 2 64) (* 2 64)]
-         :grass-foreground-1 [(* 0 64) (* 2 64)]
-         :grass-foreground-2 [(* 1 64) (* 2 64)]
-         :grass-foreground-3 [(* 2 64) (* 2 64)]
-
+         :grass-fg-1 [(* 0 64) (* 2 64)]
+         :grass-fg-2 [(* 1 64) (* 2 64)]
+         :grass-fg-3 [(* 2 64) (* 2 64)]
+         :cactus [(* 4 64) (* 2 64)]
+         :cactus-fg [(* 4 64) (* 2 64)]
          }
         ]
     (->> tile-lookup
