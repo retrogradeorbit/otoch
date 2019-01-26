@@ -23,7 +23,10 @@
 
   :cljsbuild {:builds
               [{:id "dev"
-                :source-paths ["src"]
+                :source-paths ["src"
+                               "checkouts/infinitelives.pixi/src"
+                               "checkouts/infinitelives.utils/src"
+                               ]
 
                 ;; The presence of a :figwheel configuration here
                 ;; will cause figwheel to inject the figwheel client
@@ -47,7 +50,10 @@
                ;; production. You can build this with:
                ;; lein cljsbuild once min
                {:id "min"
-                :source-paths ["src"]
+                :source-paths ["src"
+                               "checkouts/infinitelives.pixi/src"
+                               "checkouts/infinitelives.utils/src"
+                               ]
                 :compiler {:output-to "build/js/compiled/otoch.js"
                            :main otoch.core
                            :optimizations :advanced
