@@ -17,7 +17,7 @@
 
 (defonce enemies (atom {}))
 
-#_ @enemies
+#_ [@enemies @state/state]
 
 (defn add! [ekey enemy]
   (swap! enemies assoc ekey enemy))
@@ -34,12 +34,10 @@
   (let [coll (->>
               (for [[k {:keys [pos]}] @enemies]
                 (let [distance-squared (vec2/magnitude-squared (vec2/sub player-pos pos))]
-                  ;;(js/console.log "->" distance-squared)
                   (when (< distance-squared 0.5)
                     k)))
-              (map identity)
+              (filter identity)
               first)]
-    ;;(js/console.log coll "!!!")
     coll
     ))
 
@@ -59,7 +57,7 @@
           start-frame 0]
       (c/with-sprite container
         [enemy (s/make-sprite sprite :pos (vec2/scale start-pos 64))]
-        (swap! enemies assoc ekey {:pos (vec2/scale start-pos 64)} )
+        (swap! enemies assoc ekey {:pos start-pos} )
         (loop [n 0
                p start-pos
                v (vec2/zero)
@@ -69,7 +67,7 @@
                 [x y] ppos
                 y (if (= sprite :enemy-1) (wobble y n) y)
                 ]
-            (swap! enemies assoc-in [ekey :pos] (vec2/scale (vec2/vec2 x y) (/ 1 64)))
+            (swap! enemies assoc-in [ekey :pos] p)
             (s/set-pos! enemy x y))
           (s/set-scale! enemy (if (= :left facing) 1 -1) 1)
           (<! (e/next-frame))
@@ -106,95 +104,4 @@
                        new-pos
                        new-vel
                        new-facing)))
-
-            ;; rune over. return final pos
-            p))
-
-
-
-        #_ (loop [
-                  state :walking
-                  fnum 0
-                  old-vel (vec2/zero)
-                  ppos start-pos
-                  facing :left
-                  ]
-
-             (let [
-                   old-pos ppos
-                   pos ppos
-                   x (vec2/get-x pos)
-                   y (vec2/get-y pos)
-                   px (vec2/get-x ppos)
-                   py (vec2/get-y ppos)
-                   pix (int px)
-                   piy (int py)
-                   dx (- px pix)
-                   dy (- py piy)
-                   ]
-               (js/console.log pos (+ x (* 64 px)) (+ y (* 64 py)))
-               (s/set-pos! enemy (+ x (* 64 px)) (+ y (* 64 py)))
-               (<! (e/next-frame))
-
-
-
-
-               #_ (let [joy-dx -0.01
-                        joy-dy 0.0
-
-                        platforms-this-frame (platforms/prepare-platforms platforms/platforms fnum)
-
-
-                        ;; platform subset for player
-                        filtered-platforms (platforms/filter-platforms
-                                            platforms-this-frame old-pos)
-
-                        ;; simulate a little vertical move down to see if we are
-                        ;; standing on solid ground (or a platform)
-                        fallen-pos
-                        (constraints/constrain-pos constraints/platform-constrain filtered-platforms
-                                                   old-pos (vec2/add old-pos (vec2/vec2 0 0.1)))
-
-
-
-                        enemy-vel-x (Math/abs (vec2/get-x old-vel))
-                        joy-acc (vec2/vec2 joy-dx 0)
-
-                        new-vel (-> old-vel
-                                    (vec2/add joy-acc)
-                                    (vec2/scale 0.98)
-                                    )
-
-                        new-pos (-> old-pos
-                                    (vec2/add new-vel))
-
-                        passable-fn platforms/passable?
-
-                        con-pos
-                        (constraints/constrain-pos constraints/platform-constrain
-                                                   (assoc-in filtered-platforms [0 :passable?] passable-fn)
-                                                   old-pos new-pos)
-
-                        old-vel (if (= :walking state) (vec2/sub con-pos old-pos)
-                                    (-> (vec2/sub con-pos old-pos)
-                                        (vec2/set-y 0)))
-                        ]
-                    (case facing
-                      :left (s/set-scale! enemy -1 1)
-                      :right (s/set-scale! enemy 1 1)
-                      )
-                    ;;(js/console.log "!" fallen-pos)
-
-                    (recur state
-                           (inc fnum)
-                           old-vel
-                           con-pos
-                           (case (Math/sign joy-dx)
-                             1 :left
-                             0 facing
-                             -1 :right
-                             )
-                           )))))
-
-      )
-    ))
+            p))))))
