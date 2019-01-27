@@ -15,7 +15,7 @@
             [cljs.core.async :refer [<! timeout]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
-(defn spawn [container texture start-frame start-pos start-vel ω]
+(defn spawn [container texture start-frame start-pos start-vel ω & [ttl gravity]]
   (go
     (c/with-sprite container
       [particle (s/make-sprite texture :pos (vec2/scale start-pos 64))]
@@ -28,7 +28,7 @@
         (s/set-pos! particle (vec2/scale p 64))
         (s/set-rotation! particle θ)
         (<! (e/next-frame))
-        (when (< n 600)
+        (when (< n (or ttl 600))
           ;; still alive
           (let [platform-state
                 (-> platforms/platforms
@@ -46,7 +46,7 @@
                 new-vel (-> new-pos
                             (vec2/sub p)
 
-                            (vec2/add consts/blood-gravity)
+                            (vec2/add (or gravity consts/blood-gravity))
                             (vec2/scale 0.99))
 
                 ;; to see if weve landed, we try and move the particle down a bit

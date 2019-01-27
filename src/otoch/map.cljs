@@ -20,7 +20,9 @@
     "r" :reeds
     "N" :nubby-fg
     "n" :nubby
-    "B" :block))
+    "B" :block
+    "^" :death-tile-lower
+    "V" :death-tile-upper))
 
 (defn strs->keymap [strs]
   (mapv #(mapv key-for %) strs))
@@ -31,30 +33,18 @@
 (defn get-tile-at [tm x y]
   (get-in tm [y x]))
 
-(def not-passable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11 :dirt-top-1 :dirt-top-2 :dirt-top-3 :block-1 :block-2 :block-3 :block-4 :block-5})
+(def not-passable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11 :dirt-top-1 :dirt-top-2 :dirt-top-3 :block-1 :block-2 :block-3 :block-4 :block-5 :dirt-top-left :dirt-top-right})
 (def passable? (comp not not-passable?))
-(def not-walkable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11 :dirt-top-1 :dirt-top-2 :dirt-top-3 :block-1 :block-2 :block-3 :block-4 :block-5})
+(def not-walkable? #{:rocks-1 :rocks-2 :rocks-3 :grassy-left :grassy :grassy-right :dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11 :dirt-top-1 :dirt-top-2 :dirt-top-3 :block-1 :block-2 :block-3 :block-4 :block-5 :dirt-top-left :dirt-top-right})
 (def walkable? (comp not not-walkable?))
 
 (def all-dirt
-  #{:dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11})
+  #{:dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11
+    })
 
 (defn remapv [y-1 y y+1]
-  (js/console.log y-1 y y+1)
   (match [y-1 y y+1]
-         ;; ;; put top-bottom rocks tiles where the rocks is solo
-         ;; [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :rocks (b :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
-         ;; :rocks-top-bottom
-
-         ;; ;; put bottom rocks tiles where the rocks ends
-         ;; [_ :rocks (t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold})]
-         ;; :rocks-bottom
-
-         ;; ;; put top rocks tiles at the top edges
-         ;; [(t :guard #{:stone :ladder-top :ladder :crate :pot :web :space :gold}) :rocks _]
-         ;; :rocks-top
-
-         [(_ :guard (complement all-dirt))
+         [(_ :guard (complement (conj all-dirt :dirt-top-left :dirt-top-right)))
           (_ :guard all-dirt)
           _]
          (rand-nth [:dirt-top-1 :dirt-top-2 :dirt-top-3])
@@ -89,10 +79,32 @@
           _]
          (rand-nth [:dirt-2 :dirt-6 :dirt-7 :dirt-8 :dirt-1 :dirt-3 :dirt-5])
 
-
          ;; default leave tile
          [_ _ _]
          x))
+
+(defn remap [a b c d e f g h i]
+  (match [a b c
+          d e f
+          g h i]
+
+         ;; top left dirt tile
+         [_ (_ :guard #(not (#{:dirt :dirt-top-left :dirt-top-right} %))) _
+          (_ :guard #(not= :dirt %)) :dirt :dirt
+          _ _ _]
+         :dirt-top-left
+
+         ;; top right dirt tile
+         [_ (_ :guard #(not (#{:dirt :dirt-top-left :dirt-top-right} %))) _
+          :dirt :dirt (_ :guard #(not= :dirt %))
+          _ _ _]
+         :dirt-top-right
+
+         ;; default
+         [_ _ _
+          _ _ _
+          _ _ _]
+         e))
 
 (defn mapv-mapv [ss f]
   (mapv (fn [line]
@@ -123,6 +135,27 @@
                           right (get-in keymap [y (inc x)])]
                       (remaph left tile right)))
                   (range width)))
+          (range height))))
+
+(defn remap-keymap [keymap]
+  (let [height (count keymap)
+        width (count (first keymap))]
+    (mapv (fn [y]
+            (mapv (fn [x]
+                    (let [a (get-in keymap [(dec y) (dec x)])
+                          b (get-in keymap [(dec y) x])
+                          c (get-in keymap [(dec y) (inc x)])
+
+                          d (get-in keymap [y (dec x)])
+                          e (get-in keymap [y x])
+                          f (get-in keymap [y (inc x)])
+
+                          g (get-in keymap [(inc y) (dec x)])
+                          h (get-in keymap [(inc y) x])
+                          i (get-in keymap [(inc y) (inc x)])
+                          ]
+                      (remap a b c d e f g h i)))
+                  (range width)))
            (range height))))
 
 (defn randomise-keymap [keymap]
@@ -144,6 +177,13 @@
                         (rand-nth [:grass-fg-1
                                    :grass-fg-2
                                    :grass-fg-3])
+
+                        :death-tile-upper
+                        (rand-nth [:death-tile-upper-1 :death-tile-upper-2])
+
+                        :death-tile-lower
+                        (rand-nth [:death-tile-lower-1 :death-tile-lower-2])
+
 
                         :block
                         (rand-nth [:block-1 :block-1 :block-1 :block-1 :block-1
@@ -202,9 +242,11 @@
          :dirt-10 [(* 9 64) 64]
          :dirt-11 [(* 10 64) 64]
 
+         :dirt-top-left [(* 8 64) 0]
          :dirt-top-1 [(* 9 64) 0]
          :dirt-top-2 [(* 10 64) 0]
          :dirt-top-3 [(* 11 64) 0]
+         :dirt-top-right [(* 12 64) 0]
 
          :grassy-left [(* 5 64) 0]
          :grassy [(* 6 64) 0]
@@ -229,6 +271,11 @@
          :block-4 [(* 3 64) (* 4 64)]
          :block-5 [(* 4 64) (* 4 64)]
 
+         :death-tile-upper-1 [(* 6 64) (* 4 64)]
+         :death-tile-upper-2 [(* 7 64) (* 4 64)]
+
+         :death-tile-lower-1 [(* 8 64) (* 4 64)]
+         :death-tile-lower-2 [(* 9 64) (* 4 64)]
 
          }
         ]
@@ -270,7 +317,7 @@ is at a location [x y]. keys are positions. values are nth index"
   (-> [
        "B                      B                                              -------------"
        "B        BBBBBBBBBBBBBBB               ,.  t.                         -------------"
-       "B        B   B                       XXXXXXXXX                        -------------"
+       "B        B   B      VVVV             XXXXXXXXX                        -------------"
        "B        B                  t ,, R..,                                 -------------"
        "B        B     BBB          XXXXXXXXXX                                -------------"
        "B      BBB       B r , .  t                                           -------------"
@@ -285,5 +332,5 @@ is at a location [x y]. keys are positions. values are nth index"
        "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
        "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
        ]
-      strs->keymap randomise-keymap remaph-keymap remapv-keymap
+      strs->keymap remap-keymap randomise-keymap remaph-keymap remapv-keymap
       ))

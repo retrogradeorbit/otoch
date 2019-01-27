@@ -5,10 +5,12 @@ IMG=build/img/*.png
 IMG_PUBLIC=$(subst build,resources/public,$(IMG))
 SFX_SOURCE=$(wildcard resources/public/sfx/*.ogg)
 SFX=$(subst resources/public,build,$(SFX_SOURCE))
+MUSIC_SOURCE=$(wildcard resources/public/music/*.ogg)
+MUSIC=$(subst resources/public,build,$(MUSIC_SOURCE))
 ME=$(shell basename $(shell pwd))
 REPO=git@github.com:retrogradeorbit/otoch.git
 
-all: $(APP) $(CSS) $(IDX) $(IMG) #$(SFX) #$(MUSIC)
+all: $(APP) $(CSS) $(IDX) $(IMG) $(SFX) $(MUSIC)
 
 $(CSS): resources/public/css/style.css
 	mkdir -p $(dir $(CSS))
@@ -28,6 +30,10 @@ $(IMG): $(IMG_PUBLIC)
 $(SFX): $(SFX_SOURCE)
 	mkdir -p build/sfx/
 	cp $? build/sfx/
+
+$(MUSIC): $(MUSIC_SOURCE)
+	mkdir -p build/music/
+	cp $? build/music/
 
 clean:
 	lein clean
