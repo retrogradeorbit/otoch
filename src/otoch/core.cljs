@@ -391,6 +391,8 @@
                    :chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#`'.,"
                    :space 3)
 
+    (sound/play-sound :arabian 0.3 true)
+
     #_ (go
          (c/with-sprite :title
            [title (pf/make-text :pixel "OTOCH"
@@ -418,438 +420,438 @@
               (recur (+ n 0.1))))))
       )
 
-    (sound/play-sound :arabian 0.3 true)
-    (state/reset-state!)
+    (while true
+      (state/reset-state!)
 
-    ;; make the tile texture lookup
-    (let [tile-set (tm/make-tile-set :tiles)
-          stand (t/sub-texture (r/get-texture :tiles :nearest) [0 (* 4 96)] [64 64])
-          walk (t/sub-texture (r/get-texture :tiles :nearest) [(* 4 16) (* 4 96)] [64 64])
-          tilemap-order-lookup (tm/make-tiles-struct tile-set tm/tile-map)
+      ;; make the tile texture lookup
+      (let [tile-set (tm/make-tile-set :tiles)
+            stand (t/sub-texture (r/get-texture :tiles :nearest) [0 (* 4 96)] [64 64])
+            walk (t/sub-texture (r/get-texture :tiles :nearest) [(* 4 16) (* 4 96)] [64 64])
+            tilemap-order-lookup (tm/make-tiles-struct tile-set tm/tile-map)
 
-          rune-display (make-text-display :rune-1 0 :numbers 0)
+            rune-display (make-text-display :rune-1 0 :numbers 0)
 
-          heart-position (vec2/vec2 4 4)
-          ]
+            heart-position (vec2/vec2 4 4)
+            ]
 
-      #_(c/with-sprite canvas :tilemap
-          [tilemap  (s/make-container
-                     :children (tm/make-tiles tile-set tile-map)
-                     :xhandle 0 :yhandle 0
-                     :scale 1
-                     :particle true
-                     :particle-opts #{:alpha})]
+        #_(c/with-sprite canvas :tilemap
+            [tilemap  (s/make-container
+                       :children (tm/make-tiles tile-set tile-map)
+                       :xhandle 0 :yhandle 0
+                       :scale 1
+                       :particle true
+                       :particle-opts #{:alpha})]
 
 
-          )
+            )
 
-      ;; create sprite and tile map batches
-      (c/with-sprite canvas :tilemap
-        [
-         background-2 (js/PIXI.TilingSprite.
+        ;; create sprite and tile map batches
+        (c/with-sprite canvas :tilemap
+          [
+           background-2 (js/PIXI.TilingSprite.
+                         (t/sub-texture
+                          (r/get-texture :background-2 :nearest)
+                          [0 0] [1024 1024])
+                         10000 10000)
+
+
+           background (js/PIXI.TilingSprite.
                        (t/sub-texture
-                        (r/get-texture :background-2 :nearest)
+                        (r/get-texture :background-1 :nearest)
                         [0 0] [1024 1024])
                        10000 10000)
 
+           ;; {:size [64 64] :pos [(* 15 64) (* 6 64)]}
+           beam-1 (js/PIXI.TilingSprite.
+                   (t/sub-texture
+                    (r/get-texture :tiles :nearest)
+                    [(+ 10 (* 15 64)) (* 6 64)]
+                    [44 1]
+                    )
+                   64 10000)
 
-         background (js/PIXI.TilingSprite.
-                     (t/sub-texture
-                      (r/get-texture :background-1 :nearest)
-                      [0 0] [1024 1024])
-                     10000 10000)
+           beam-2 (js/PIXI.TilingSprite.
+                   (t/sub-texture
+                    (r/get-texture :tiles :nearest)
+                    [(+ 10 (* 15 64)) (* 8 64)]
+                    [44 1]
+                    )
+                   64 10000)
 
-         ;; {:size [64 64] :pos [(* 15 64) (* 6 64)]}
-         beam-1 (js/PIXI.TilingSprite.
-                 (t/sub-texture
-                  (r/get-texture :tiles :nearest)
-                  [(+ 10 (* 15 64)) (* 6 64)]
-                  [44 1]
-                  )
-                 64 10000)
-
-         beam-2 (js/PIXI.TilingSprite.
-                 (t/sub-texture
-                  (r/get-texture :tiles :nearest)
-                  [(+ 10 (* 15 64)) (* 8 64)]
-                  [44 1]
-                  )
-                 64 10000)
-
-         beam-3 (js/PIXI.TilingSprite.
-                 (t/sub-texture
-                  (r/get-texture :tiles :nearest)
-                  [(+ 10 (* 15 64)) (* 10 64)]
-                  [44 1]
-                  )
-                 44 10000)
+           beam-3 (js/PIXI.TilingSprite.
+                   (t/sub-texture
+                    (r/get-texture :tiles :nearest)
+                    [(+ 10 (* 15 64)) (* 10 64)]
+                    [44 1]
+                    )
+                   44 10000)
 
 
-         dynamites (s/make-container :scale 1 :particle false)
+           dynamites (s/make-container :scale 1 :particle false)
 
-         tilemap (s/make-container
-                  :children (tm/make-tiles tile-set tm/tile-map)
-                  :xhandle 0 :yhandle 0
-                  :scale 1
-                  ;;:particle true
-                  ;;:particle-opts #{:alpha}
-                  )
-         platform (s/make-container
-                   :children (tm/make-tiles tile-set platforms/platform-map)
-                   ;; :xhandle 0 :yhandle 0
-                   :scale 1
-                   ;;:particle true
-                   )
-         ;; platform2 (s/make-container
-         ;;            :children (tm/make-tiles tile-set platform2-map)
-         ;;            :xhandle 0 :yhandle 0
-         ;;            :scale 1
-         ;;            :particle true)
-         ;; platform3 (s/make-container
-         ;;            :children (tm/make-tiles tile-set platform2-map)
-         ;;            :xhandle 0 :yhandle 0
-         ;;            :scale 1
-         ;;            :particle true)
-
-         behind-player (s/make-container)
-
-         player (s/make-sprite stand :scale 1)
-         foreground (s/make-container
-                     :children (tm/make-tiles tile-set (into [] (make-foreground-map tm/tile-map)))
-                     ;;:xhandle 0 :yhandle 0
+           tilemap (s/make-container
+                    :children (tm/make-tiles tile-set tm/tile-map)
+                    :xhandle 0 :yhandle 0
+                    :scale 1
+                    ;;:particle true
+                    ;;:particle-opts #{:alpha}
+                    )
+           platform (s/make-container
+                     :children (tm/make-tiles tile-set platforms/platform-map)
+                     ;; :xhandle 0 :yhandle 0
                      :scale 1
                      ;;:particle true
                      )
+           ;; platform2 (s/make-container
+           ;;            :children (tm/make-tiles tile-set platform2-map)
+           ;;            :xhandle 0 :yhandle 0
+           ;;            :scale 1
+           ;;            :particle true)
+           ;; platform3 (s/make-container
+           ;;            :children (tm/make-tiles tile-set platform2-map)
+           ;;            :xhandle 0 :yhandle 0
+           ;;            :scale 1
+           ;;            :particle true)
 
-         enemies (s/make-container)
+           behind-player (s/make-container)
 
+           player (s/make-sprite stand :scale 1)
+           foreground (s/make-container
+                       :children (tm/make-tiles tile-set (into [] (make-foreground-map tm/tile-map)))
+                       ;;:xhandle 0 :yhandle 0
+                       :scale 1
+                       ;;:particle true
+                       )
 
-         ]
-
-        (enemy/spawn enemies (vec2/vec2 43 0))
-        (heart/spawn behind-player heart-position)
-        (pickup/spawn behind-player :rune 0 (vec2/vec2 3 3))
-
-        (s/set-scale! background 1)
-        (s/set-scale! background-2 1)
-        (loop [
-               state :walking
-               fnum 0
-               old-vel (vec2/vec2 0 0)
-               ppos (vec2/vec2 1.5 4.5)
-               jump-pressed 0
-               last-x-pressed? (e/is-pressed? :x)
-               facing :left
-               ]
-
-          (let [
-                original-vel old-vel
-                old-pos ppos
-                pos (-> ppos
-                        (vec2/scale (* -2 32)))
-                x (vec2/get-x pos) ;; (+ -2000 (* 1000 (Math/sin theta)))
-                y (vec2/get-y pos) ;; (+ -1000 (* 500 (Math/cos theta)))
-
-                px (vec2/get-x ppos)
-                py (vec2/get-y ppos)
-                pix (int px)
-                piy (int py)
-                dx (- px pix)
-                dy (- py piy)
-
-                joy (vec2/vec2 (or (gp/axis 0)
-                                   (cond (e/is-pressed? :left) -1
-                                         (e/is-pressed? :right) 1
-                                         :default 0) )
-                               (or (gp/axis 1)
-                                   (cond (e/is-pressed? :up) -1
-                                         (e/is-pressed? :down) 1
-                                         :default 0)
-                                   ))
-
-                platforms-this-frame (platforms/prepare-platforms platforms/platforms fnum)
-
-                ;; platform subset for player
-                filtered-platforms (platforms/filter-platforms
-                                    platforms-this-frame old-pos)
-                ]
-
-            (s/set-texture! player
-                            (if (> (Math/abs (vec2/get-x joy)) 0.02)
-                              (if (zero? (mod (int (/ fnum 10)) 2)) stand walk)
-                              stand))
-
-            ;; player still playing
-            (set-player player x y px py)
-
-            (s/set-pos! dynamites x y)
-
-            ;;(js/console.log "===>" (str platforms-this-frame))
-
-            ;; set tilemap positions
-            (doall
-             (map
-              (fn [{:keys [name old-platform-pos]} obj]
-                (let [pos (-> old-platform-pos
-                              (vec2/scale (* 4 16))
-                              (vec2/add (vec2/vec2 x y)))
-                      [x y] pos]
-                  (s/set-pos! obj (int x) (int y))))
-              platforms-this-frame
-              [tilemap platform ;;platform2 platform3
-               ]))
+           enemies (s/make-container)
 
 
-            (s/set-pos! foreground (int x) (int y))
+           ]
 
-            (set-beams beam-1 beam-2 beam-3 x y fnum)
+          (enemy/spawn enemies (vec2/vec2 43 0))
+          (heart/spawn behind-player heart-position)
+          (pickup/spawn behind-player :rune 0 (vec2/vec2 3 3))
 
-            (s/set-pos! background
-                        (+ -5000 (mod (int (* x 0.90)) 1024))
-                        (+ -5000 (mod (int (* y 0.90)) 1024)))
+          (s/set-scale! background 1)
+          (s/set-scale! background-2 1)
+          (loop [
+                 state :walking
+                 fnum 0
+                 old-vel (vec2/vec2 0 0)
+                 ppos (vec2/vec2 1.5 4.5)
+                 jump-pressed 0
+                 last-x-pressed? (e/is-pressed? :x)
+                 facing :left
+                 ]
 
-            (s/set-pos! background-2
-                        (+ -5000 (mod (int (* x 0.80)) 1024))
-                        (+ -5000 (mod (int (* y 0.80)) 1024)))
-
-            ;; save level pos so other go blocks can access
-            ;; (swap! state/state assoc :pos (vec2/vec2 x y))
-
-            (s/set-pos! enemies (int x) (int y))
-            (s/set-pos! behind-player (int x) (int y))
-
-            (<! (e/next-frame))
-                                        ;(log dy minus-v-edge)
             (let [
-                  square-on (tm/get-tile-at tm/tile-map pix piy)
-                  square-below (tm/get-tile-at tm/tile-map pix (inc piy))
-                  square-standing-on (tm/get-tile-at tm/tile-map pix
-                                                     (int (+ 0.3 py)))
+                  original-vel old-vel
+                  old-pos ppos
+                  pos (-> ppos
+                          (vec2/scale (* -2 32)))
+                  x (vec2/get-x pos) ;; (+ -2000 (* 1000 (Math/sin theta)))
+                  y (vec2/get-y pos) ;; (+ -1000 (* 500 (Math/cos theta)))
 
-                  on-ladder-transition? (or (= square-on :ladder)
-                                            (= square-on :ladder-top)
-                                            (= square-below :ladder-top))
+                  px (vec2/get-x ppos)
+                  py (vec2/get-y ppos)
+                  pix (int px)
+                  piy (int py)
+                  dx (- px pix)
+                  dy (- py piy)
 
-                  on-ladder? (#{:ladder :ladder-top} square-standing-on)
+                  joy (vec2/vec2 (or (gp/axis 0)
+                                     (cond (e/is-pressed? :left) -1
+                                           (e/is-pressed? :right) 1
+                                           :default 0) )
+                                 (or (gp/axis 1)
+                                     (cond (e/is-pressed? :up) -1
+                                           (e/is-pressed? :down) 1
+                                           :default 0)
+                                     ))
 
-                  ladder-up? (#{:ladder :ladder-top} square-standing-on)
-                  ladder-down? (#{:ladder :ladder-top} square-below)
+                  platforms-this-frame (platforms/prepare-platforms platforms/platforms fnum)
 
-                  plat (which-platform? old-pos filtered-platforms)
-
-                  ;;_ (js/console.log "PLAT:" plat)
-
-                  ;; move oldpos by platform movement
-                  old-pos (if plat
-                            (-> filtered-platforms
-                                (nth plat)
-                                :platform-delta
-                                (vec2/add old-pos))
-                            old-pos)
-
-                  ;; simulate a little vertical move down to see if we are
-                  ;; standing on solid ground (or a platform)
-                  fallen-pos
-                  (constraints/constrain-pos constraints/platform-constrain filtered-platforms
-                                             old-pos (vec2/add old-pos (vec2/vec2 0 0.1)))
-
-                  ;; TODO: this is dodgy. We need to test with each platform.
-                  ;; if we are standing on a platform, we are "bound to it"
-                  ;; and we move where it does!
-                  standing-on-ground? (> 0.06 (Math/abs (- (vec2/get-y fallen-pos) (vec2/get-y old-pos))))
-
-                  jump-pressed (cond
-                                 (and (jump-button-pressed?) (zero? jump-pressed) standing-on-ground?) ;; cant jump off ladder! if you can, problem... when jumping off lader, state stays climbing causing no accel for the jump
-                                 (inc jump-pressed)
-
-                                 (and (jump-button-pressed?) (pos? jump-pressed))
-                                 (inc jump-pressed)
-
-                                 :default
-                                 0)
-
-                  jump-force (if (and (<= 1 jump-pressed consts/jump-frames)
-                                      (jump-button-pressed?))
-                               (vec2/vec2 0 (- (if (= 1 jump-pressed)
-                                                 consts/jump-accel-1
-                                                 consts/jump-accel-2+)))
-                               (vec2/zero))
-
-                  joy-dy (-> joy
-                             (hollow 0.2)
-                             (vec2/get-y))
-
-                  joy-dy (cond
-                           (and (not ladder-up?) (neg? joy-dy))
-                           0
-
-                           (and (not ladder-down?) (not ladder-up?) (pos? joy-dy))
-                           0
-
-                           :default joy-dy)
-
-                  joy-dx (-> joy
-                             (hollow 0.2)
-                             (vec2/scale 0.005)
-                             (vec2/get-x))
-
-                  state-ladder? (and on-ladder-transition?
-                                     (not (zero? joy-dy)))
-
-                  joy-acc (if (= :climbing state)
-                            (vec2/vec2 joy-dx (* 0.1 joy-dy))
-                            (vec2/vec2 joy-dx 0))
-
-
-                  player-vel-x (Math/abs (vec2/get-x old-vel))
-
-                  ;; when moving quickly left and right, and the
-                  ;; joystick is centered or reversed, this breaking
-                  ;; horitontal force is applied
-                  player-brake
-                  (match [(Math/sign (vec2/get-x old-vel))
-                          (Math/sign (vec2/get-x (hollow joy 0.5)))]
-                         [1 0] (vec2/vec2 -1 0)
-                         [1 -1] (vec2/vec2 -1 0)
-                         [-1 0] (vec2/vec2 1 0)
-                         [-1 1] (vec2/vec2 1 0)
-                         [_ _] (vec2/zero))
-
-
-                  next-state (if state-ladder?
-                               :climbing
-                               (if on-ladder? state :walking))
-
-                  passable-fn (if (= :walking next-state)
-                                platforms/walkable?
-                                platforms/passable?)
-
-                  new-vel (-> old-vel
-                              ;; zero any y vel in the last frames vel if we are climbing
-                              (vec2/set-y (if (= state :climbing) 0 (vec2/get-y old-vel)))
-                              ;; no gravity on you when you are on the stairs
-                              (vec2/add (if (= state :climbing) (vec2/zero) consts/gravity))
-
-                              (vec2/add jump-force)
-                              (vec2/add joy-acc)
-                              (vec2/add (vec2/scale player-brake (/ player-vel-x 3)))
-                              (vec2/scale 0.98)
-                              )
-
-                  new-pos (-> old-pos
-                              (vec2/add new-vel))
-
-                  con-pos
-                  (constraints/constrain-pos constraints/platform-constrain
-                                             (assoc-in filtered-platforms [0 :passable?] passable-fn)
-                                             old-pos new-pos)
-
-                  old-vel (if (= :walking state) (vec2/sub con-pos old-pos)
-                              (-> (vec2/sub con-pos old-pos)
-                                  (vec2/set-y 0)))
-
+                  ;; platform subset for player
+                  filtered-platforms (platforms/filter-platforms
+                                      platforms-this-frame old-pos)
                   ]
-              (when (and (pos? (:runes @state/state))
-                         (not last-x-pressed?)
-                         (e/is-pressed? :x))
-                (make-dynamite
-                      dynamites ppos old-vel fnum)
-                (swap! state/state update :runes dec))
 
-              (when (and (jump-button-pressed?) standing-on-ground?)
-                (sound/play-sound :jump 0.3 false))
+              (s/set-texture! player
+                              (if (> (Math/abs (vec2/get-x joy)) 0.02)
+                                (if (zero? (mod (int (/ fnum 10)) 2)) stand walk)
+                                stand))
 
-              (when (> (vec2/magnitude-squared (vec2/sub original-vel old-vel)) 0.01)
-                (sound/play-sound :thud 0.06 false)
-                )
+              ;; player still playing
+              (set-player player x y px py)
 
-              (case facing
-                :left (s/set-scale! player -1 1)
-                :right (s/set-scale! player 1 1)
-                )
+              (s/set-pos! dynamites x y)
 
-              ;; have we collided with any enemies?
-              (let [die? (enemy/collided? con-pos)]
-                (if-not (or die?
-                            (e/is-pressed? :q)
+              ;;(js/console.log "===>" (str platforms-this-frame))
 
-                            ;; have we hit a deathtile?
-                            (#{:death-tile-upper-1
-                               :death-tile-upper-2
-                               :death-tile-lower-1
-                               :death-tile-lower-2}
-                             square-on
-                             )
-                            )
-                  ;; still alive
-                  (do
+              ;; set tilemap positions
+              (doall
+               (map
+                (fn [{:keys [name old-platform-pos]} obj]
+                  (let [pos (-> old-platform-pos
+                                (vec2/scale (* 4 16))
+                                (vec2/add (vec2/vec2 x y)))
+                        [x y] pos]
+                    (s/set-pos! obj (int x) (int y))))
+                platforms-this-frame
+                [tilemap platform ;;platform2 platform3
+                 ]))
 
-                    (if (-> @state/state :touched-heart?)
-                      ;; finished!
-                      (loop [fnum fnum]
 
-                        (let [[x y] [0 0]]
-                          (s/set-pos! player
-                                      (vec2/scale
-                                       (vec2/vec2
-                                        (+ x (sin x-amp x-freq fnum))
-                                        (+ y (sin y-amp y-freq fnum))
-                                        )
-                                       64))
-                          #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
+              (s/set-pos! foreground (int x) (int y))
 
-                        (<! (e/next-frame))
+              (set-beams beam-1 beam-2 beam-3 x y fnum)
 
-                        (recur (inc fnum))
+              (s/set-pos! background
+                          (+ -5000 (mod (int (* x 0.90)) 1024))
+                          (+ -5000 (mod (int (* y 0.90)) 1024)))
 
-                        )
+              (s/set-pos! background-2
+                          (+ -5000 (mod (int (* x 0.80)) 1024))
+                          (+ -5000 (mod (int (* y 0.80)) 1024)))
 
-                      ;; still playing
-                      (recur
-                       next-state
-                       (inc fnum)
-                       old-vel
-                       con-pos
-                       jump-pressed
-                       (e/is-pressed? :x)
-                       (case (Math/sign joy-dx)
-                         -1 :left
-                         0 facing
-                         1 :right
-                         ))))
+              ;; save level pos so other go blocks can access
+              ;; (swap! state/state assoc :pos (vec2/vec2 x y))
 
-                  ;; you get hit by enemy
-                  ;; dead
-                  (do
-                    (sound/play-sound :death 0.3 false)
+              (s/set-pos! enemies (int x) (int y))
+              (s/set-pos! behind-player (int x) (int y))
 
-                    ;; particles
-                    (doseq [n (range 32)]
-                      (let [vel (vec2/add
-                                 (vec2/scale (vec2/add (vec2/random)
-                                                       (vec2/vec2 0 -0.3)
-                                                       ) 0.1)
-                                 (vec2/scale old-vel 0.33)
-                                 )]
-                        (js/console.log (str vel))
-                        (particle/spawn enemies
-                                        (rand-nth [:blood-1 :blood-2 :blood-3 :blood-4
-                                                   :blood-5 :blood-6 :blood-7 :blood-8
-                                                   :blood-9 :blood-10 :blood-11 :blood-12
-                                                   :blood-13 :blood-14 :blood-15 :blood-16
-                                                   ])
-                                        (inc fnum)
-                                        (vec2/scale con-pos 1)
-                                        vel
-                                        (/ (- (rand) 0.5) 3)
-                                        )))
+              (<! (e/next-frame))
+                                        ;(log dy minus-v-edge)
+              (let [
+                    square-on (tm/get-tile-at tm/tile-map pix piy)
+                    square-below (tm/get-tile-at tm/tile-map pix (inc piy))
+                    square-standing-on (tm/get-tile-at tm/tile-map pix
+                                                       (int (+ 0.3 py)))
 
+                    on-ladder-transition? (or (= square-on :ladder)
+                                              (= square-on :ladder-top)
+                                              (= square-below :ladder-top))
+
+                    on-ladder? (#{:ladder :ladder-top} square-standing-on)
+
+                    ladder-up? (#{:ladder :ladder-top} square-standing-on)
+                    ladder-down? (#{:ladder :ladder-top} square-below)
+
+                    plat (which-platform? old-pos filtered-platforms)
+
+                    ;;_ (js/console.log "PLAT:" plat)
+
+                    ;; move oldpos by platform movement
+                    old-pos (if plat
+                              (-> filtered-platforms
+                                  (nth plat)
+                                  :platform-delta
+                                  (vec2/add old-pos))
+                              old-pos)
+
+                    ;; simulate a little vertical move down to see if we are
+                    ;; standing on solid ground (or a platform)
+                    fallen-pos
+                    (constraints/constrain-pos constraints/platform-constrain filtered-platforms
+                                               old-pos (vec2/add old-pos (vec2/vec2 0 0.1)))
+
+                    ;; TODO: this is dodgy. We need to test with each platform.
+                    ;; if we are standing on a platform, we are "bound to it"
+                    ;; and we move where it does!
+                    standing-on-ground? (> 0.06 (Math/abs (- (vec2/get-y fallen-pos) (vec2/get-y old-pos))))
+
+                    jump-pressed (cond
+                                   (and (jump-button-pressed?) (zero? jump-pressed) standing-on-ground?) ;; cant jump off ladder! if you can, problem... when jumping off lader, state stays climbing causing no accel for the jump
+                                   (inc jump-pressed)
+
+                                   (and (jump-button-pressed?) (pos? jump-pressed))
+                                   (inc jump-pressed)
+
+                                   :default
+                                   0)
+
+                    jump-force (if (and (<= 1 jump-pressed consts/jump-frames)
+                                        (jump-button-pressed?))
+                                 (vec2/vec2 0 (- (if (= 1 jump-pressed)
+                                                   consts/jump-accel-1
+                                                   consts/jump-accel-2+)))
+                                 (vec2/zero))
+
+                    joy-dy (-> joy
+                               (hollow 0.2)
+                               (vec2/get-y))
+
+                    joy-dy (cond
+                             (and (not ladder-up?) (neg? joy-dy))
+                             0
+
+                             (and (not ladder-down?) (not ladder-up?) (pos? joy-dy))
+                             0
+
+                             :default joy-dy)
+
+                    joy-dx (-> joy
+                               (hollow 0.2)
+                               (vec2/scale 0.005)
+                               (vec2/get-x))
+
+                    state-ladder? (and on-ladder-transition?
+                                       (not (zero? joy-dy)))
+
+                    joy-acc (if (= :climbing state)
+                              (vec2/vec2 joy-dx (* 0.1 joy-dy))
+                              (vec2/vec2 joy-dx 0))
+
+
+                    player-vel-x (Math/abs (vec2/get-x old-vel))
+
+                    ;; when moving quickly left and right, and the
+                    ;; joystick is centered or reversed, this breaking
+                    ;; horitontal force is applied
+                    player-brake
+                    (match [(Math/sign (vec2/get-x old-vel))
+                            (Math/sign (vec2/get-x (hollow joy 0.5)))]
+                           [1 0] (vec2/vec2 -1 0)
+                           [1 -1] (vec2/vec2 -1 0)
+                           [-1 0] (vec2/vec2 1 0)
+                           [-1 1] (vec2/vec2 1 0)
+                           [_ _] (vec2/zero))
+
+
+                    next-state (if state-ladder?
+                                 :climbing
+                                 (if on-ladder? state :walking))
+
+                    passable-fn (if (= :walking next-state)
+                                  platforms/walkable?
+                                  platforms/passable?)
+
+                    new-vel (-> old-vel
+                                ;; zero any y vel in the last frames vel if we are climbing
+                                (vec2/set-y (if (= state :climbing) 0 (vec2/get-y old-vel)))
+                                ;; no gravity on you when you are on the stairs
+                                (vec2/add (if (= state :climbing) (vec2/zero) consts/gravity))
+
+                                (vec2/add jump-force)
+                                (vec2/add joy-acc)
+                                (vec2/add (vec2/scale player-brake (/ player-vel-x 3)))
+                                (vec2/scale 0.98)
+                                )
+
+                    new-pos (-> old-pos
+                                (vec2/add new-vel))
+
+                    con-pos
+                    (constraints/constrain-pos constraints/platform-constrain
+                                               (assoc-in filtered-platforms [0 :passable?] passable-fn)
+                                               old-pos new-pos)
+
+                    old-vel (if (= :walking state) (vec2/sub con-pos old-pos)
+                                (-> (vec2/sub con-pos old-pos)
+                                    (vec2/set-y 0)))
+
+                    ]
+                (when (and (pos? (:runes @state/state))
+                           (not last-x-pressed?)
+                           (e/is-pressed? :x))
+                  (make-dynamite
+                   dynamites ppos old-vel fnum)
+                  (swap! state/state update :runes dec))
+
+                (when (and (jump-button-pressed?) standing-on-ground?)
+                  (sound/play-sound :jump 0.3 false))
+
+                (when (> (vec2/magnitude-squared (vec2/sub original-vel old-vel)) 0.01)
+                  (sound/play-sound :thud 0.06 false)
+                  )
+
+                (case facing
+                  :left (s/set-scale! player -1 1)
+                  :right (s/set-scale! player 1 1)
+                  )
+
+                ;; have we collided with any enemies?
+                (let [die? (enemy/collided? con-pos)]
+                  (if-not (or die?
+                              (e/is-pressed? :q)
+
+                              ;; have we hit a deathtile?
+                              (#{:death-tile-upper-1
+                                 :death-tile-upper-2
+                                 :death-tile-lower-1
+                                 :death-tile-lower-2}
+                               square-on
+                               )
+                              )
+                    ;; still alive
+                    (do
+
+                      (if (-> @state/state :touched-heart?)
+                        ;; finished!
+                        (loop [fnum fnum]
+
+                          (let [[x y] [0 0]]
+                            (s/set-pos! player
+                                        (vec2/scale
+                                         (vec2/vec2
+                                          (+ x (sin x-amp x-freq fnum))
+                                          (+ y (sin y-amp y-freq fnum))
+                                          )
+                                         64))
+                            #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
+
+                          (<! (e/next-frame))
+
+                          (recur (inc fnum))
+
+                          )
+
+                        ;; still playing
+                        (recur
+                         next-state
+                         (inc fnum)
+                         old-vel
+                         con-pos
+                         jump-pressed
+                         (e/is-pressed? :x)
+                         (case (Math/sign joy-dx)
+                           -1 :left
+                           0 facing
+                           1 :right
+                           ))))
+
+                    ;; you get hit by enemy
                     ;; dead
-                    (s/set-alpha! player 0)
-                    (loop [n 300]
-                      (<! (e/next-frame))
-                      (when (pos? n)
-                        (recur (dec n))))))))))
+                    (do
+                      (sound/play-sound :death 0.3 false)
+
+                      ;; particles
+                      (doseq [n (range 32)]
+                        (let [vel (vec2/add
+                                   (vec2/scale (vec2/add (vec2/random)
+                                                         (vec2/vec2 0 -0.3)
+                                                         ) 0.1)
+                                   (vec2/scale old-vel 0.33)
+                                   )]
+                          (js/console.log (str vel))
+                          (particle/spawn enemies
+                                          (rand-nth [:blood-1 :blood-2 :blood-3 :blood-4
+                                                     :blood-5 :blood-6 :blood-7 :blood-8
+                                                     :blood-9 :blood-10 :blood-11 :blood-12
+                                                     :blood-13 :blood-14 :blood-15 :blood-16
+                                                     ])
+                                          (inc fnum)
+                                          (vec2/scale con-pos 1)
+                                          vel
+                                          (/ (- (rand) 0.5) 3)
+                                          )))
+
+                      ;; dead
+                      (s/set-alpha! player 0)
+                      (loop [n 300]
+                        (<! (e/next-frame))
+                        (when (pos? n)
+                          (recur (dec n))))))))))
 
 
-        ))))
+          )))))

@@ -22,7 +22,8 @@
     "n" :nubby
     "B" :block
     "^" :death-tile-lower
-    "V" :death-tile-upper))
+    "V" :death-tile-upper
+    "f" :flower))
 
 (defn strs->keymap [strs]
   (mapv #(mapv key-for %) strs))
@@ -184,6 +185,9 @@
                         :death-tile-lower
                         (rand-nth [:death-tile-lower-1 :death-tile-lower-2])
 
+                        :flower
+                        (rand-nth [:flower-1 :flower-2 :flower-3 :flower-4 :flower-5])
+
 
                         :block
                         (rand-nth [:block-1 :block-1 :block-1 :block-1 :block-1
@@ -277,6 +281,12 @@
          :death-tile-lower-1 [(* 8 64) (* 4 64)]
          :death-tile-lower-2 [(* 9 64) (* 4 64)]
 
+         :flower-1 [(* 9 64) (* 2 64)]
+         :flower-2 [(* 10 64) (* 2 64)]
+         :flower-3 [(* 11 64) (* 2 64)]
+         :flower-4 [(* 12 64) (* 2 64)]
+         :flower-5 [(* 13 64) (* 2 64)]
+
          }
         ]
     (->> tile-lookup
@@ -322,7 +332,7 @@ is at a location [x y]. keys are positions. values are nth index"
        "B        B     BBB          XXXXXXXXXX                                -------------"
        "B      BBB       B r , .  t                                           -------------"
        "B                XXXXXXXXXXXX                                         -------------"
-       "B              n      -                                c    C         -------------"
+       "B      f       n      -                                c    C         -------------"
        "+++  ++++    ++++++++++++++++++++++  N            +++++++++++++++++++++++++++++++++"
        "++++  +++    ++++++++++++++++++++++++++       +++++++++++++++++++++++++++++++++++++"
        "+++++  ++    ++++++++++++++++++++          ++++++++++++++++++++++++++++++++++++++++"
