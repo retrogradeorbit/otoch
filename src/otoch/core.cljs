@@ -21,6 +21,7 @@
             [otoch.enemy :as enemy]
             [otoch.heart :as heart]
             [otoch.pickup :as pickup]
+            [otoch.utils :as utils]
             [cljs.core.async :refer [chan close! >! <! timeout]]
 )
   (:require-macros [cljs.core.async.macros :refer [go]]
@@ -378,19 +379,20 @@
 
 (defonce main
   (go
-    ;; load image tilesets
-    (<! (r/load-resources canvas :ui ["img/tiles.png"
-                                      "img/fonts.png"
-                                      "img/title.png"
-                                      "img/background-1.png"
-                                      "img/background-2.png"
-                                      "sfx/collect.ogg"
-                                      "sfx/death.ogg"
-                                      "sfx/jump.ogg"
-                                      "sfx/monolith.ogg"
-                                      "sfx/runethrow.ogg"
-                                      "sfx/thud.ogg"
-                                      "music/arabian.ogg"]))
+    ;; load image tilesets and sounds
+    (let [ogg? (<! (utils/supports-ogg-chan))]
+      (<! (r/load-resources canvas :ui ["img/tiles.png"
+                                        "img/fonts.png"
+                                        "img/title.png"
+                                        "img/background-1.png"
+                                        "img/background-2.png"
+                                        (if ogg? "sfx/collect.ogg" "sfx/collect.mp3")
+                                        (if ogg? "sfx/death.ogg" "sfx/death.mp3")
+                                        (if ogg? "sfx/jump.ogg" "sfx/jump.mp3")
+                                        (if ogg? "sfx/monolith.ogg" "sfx/monolith.mp3")
+                                        (if ogg? "sfx/runethrow.ogg" "sfx/runethrow.mp3")
+                                        (if ogg? "sfx/thud.ogg" "sfx/thud.mp3")
+                                        (if ogg? "music/arabian.ogg" "music/arabian.mp3")])))
 
     ;; load textures
     (t/load-sprite-sheet! (r/get-texture :tiles) sprite-sheet-layout)
