@@ -356,18 +356,18 @@
   (* amp (Math/sin (* n freq))))
 
 (defn set-beams [beam-1 beam-2 beam-3 x y fnum]
-  (s/set-pos! beam-1 (+ x (* 3.5 64)
+  (s/set-pos! beam-1 (+ x (* 61.5 64)
                         (sin 4 0.1 fnum)
                         (sin 4 0.3 fnum)
                         ) (- y 5000))
   (s/set-alpha! beam-1 (min 1 (+ 0.8 (rand))))
   (s/set-scale! beam-1 1 1)
 
-  (s/set-pos! beam-2 (+ x (* 3.75 64) (sin 8 0.12 fnum)) (- y 5000))
+  (s/set-pos! beam-2 (+ x (* 61.75 64) (sin 8 0.12 fnum)) (- y 5000))
   (s/set-alpha! beam-2 (min 1 (+ 0.2 (rand))))
   (s/set-scale! beam-2 0.5 1)
 
-  (s/set-pos! beam-3 (int (+ x (* 3.875 64) (sin 8 0.08 fnum)))
+  (s/set-pos! beam-3 (int (+ x (* 61.875 64) (sin 8 0.08 fnum)))
               (int (- y 5000)))
   (s/set-alpha! beam-3 (min 1 (+ 0.2 (rand))))
   (s/set-scale! beam-3 0.25 1)
@@ -445,7 +445,7 @@
 
             rune-display (make-text-display :rune-1 0 :numbers 0)
 
-            heart-position (vec2/vec2 4 4)
+            heart-position (vec2/vec2 62 -5)
             ]
 
         #_(c/with-sprite canvas :tilemap
