@@ -821,7 +821,7 @@
 
                 ;; have we collided with any enemies?
                 (let [die? (enemy/collided? con-pos)]
-                  (js/console.log "die?" die?)
+                  ;; (js/console.log "die?" die?)
                   (if-not (or die?
                               (e/is-pressed? :q)
 

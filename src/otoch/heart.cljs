@@ -58,15 +58,17 @@
                         (vec2/vec2
                          (+ x (sin x-amp x-freq n))
                          (+ y (sin y-amp y-freq n)))
-                        (vec2/vec2 0 (:trees @state/state))
-                        )
+                        (vec2/vec2 0 (:trees @state/state)))
                        64))
           #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
         (<! (e/next-frame))
 
         (let [player-pos (:pos @state/state)
-              distance-squared (vec2/magnitude-squared (vec2/sub player-pos pos))
-              ]
+              distance-squared
+              (vec2/magnitude-squared
+               (vec2/sub player-pos
+                         (vec2/add pos
+                                   (vec2/vec2 0 (:trees @state/state)))))]
           (if (> distance-squared 1)
             ;; still hanging around
             (recur (inc n) pos)
@@ -79,10 +81,11 @@
                 (let [[x y] pos]
                   (s/set-pos! heart
                               (vec2/scale
-                               (vec2/vec2
-                                (+ x (sin x-amp x-freq n))
-                                (+ y (sin y-amp y-freq n))
-                                )
+                               (vec2/add
+                                (vec2/vec2
+                                 (+ x (sin x-amp x-freq n))
+                                 (+ y (sin y-amp y-freq n)))
+                                (vec2/vec2 0 (:trees @state/state)))
                                64))
                   #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
 
@@ -93,12 +96,11 @@
                      container
                      (star-burst-texture-fn)
                      n
-                     pos
+                     (vec2/add pos (vec2/vec2 0 (:trees @state/state)))
                      (star-burst-vel)
                      (rand)
                      star-burst-life
                      )))
-
 
                 (<! (e/next-frame))
 
