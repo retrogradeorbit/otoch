@@ -43,3 +43,12 @@
     :minus-h-edge 0.99
     :minus-v-edge 0.99}
    pos new-pos old-pos))
+
+(defn pickup-constrain [pass? pos old-pos new-pos]
+  (line/constrain-offset
+   {:passable? pass?
+    :h-edge 0.3
+    :v-edge 0.3
+    :minus-h-edge 0.7
+    :minus-v-edge 0.5}
+   pos new-pos old-pos))

@@ -20,6 +20,7 @@
             [otoch.particle :as particle]
             [otoch.enemy :as enemy]
             [otoch.heart :as heart]
+            [otoch.pickup :as pickup]
             [cljs.core.async :refer [chan close! >! <! timeout]]
 )
   (:require-macros [cljs.core.async.macros :refer [go]]
@@ -96,6 +97,13 @@
    :heart {:size [128 128] :pos [(* 14 64) (* 3 64)]}
 
    :gold {:size [16 16] :pos [0 32]}
+
+   :beam-1 {:size [64 64] :pos [(* 15 64) (* 6 64)]}
+   :beam-2 {:size [64 64] :pos [(* 15 64) (* 8 64)]}
+   :beam-3 {:size [64 64] :pos [(* 15 64) (* 10 64)]}
+
+   :rune {:size [64 64] :pos [(* 3 64) (* 9 64)]}
+
    })
 
 ;; when player finished he wobbles around
@@ -185,17 +193,19 @@
   the text disappears.
   "
   [icon y font s]
-  (let [c (chan)]
-    (go
-      (c/with-sprite :stats
-        [icon (s/make-sprite icon :scale 4 :y (+ y -5))
-         text (pf/make-text font (str s) :scale 4 :xhandle 0 :x 50 :y y)]
-        (loop [s (<! c)]
-          (pf/change-text! text font (str s))
-          (s/update-handle! text 0 0.5)
-          (when-let [res (<! c)]
-            (recur res)))))
-    c))
+  (go
+    (c/with-sprite :stats
+      [icon (s/make-sprite icon :scale 1 :y (+ y -5))
+       text (pf/make-text font (str s) :scale 2 :xhandle 0 :x 50 :y y)]
+      (loop [s (:runes @state/state)]
+
+        (<! (e/next-frame))
+        (let [new-s (:runes @state/state)]
+          (when (not= s new-s)
+            ;; value changed
+            (pf/change-text! text font (str new-s))
+            (s/update-handle! text 0 0.5))
+          (recur new-s))))))
 
 (defn megalith-set-pos! [sprite pos]
   (let [
@@ -211,7 +221,7 @@
   )
 
 (defn make-dynamite [container pos vel start-frame]
-  (sound/play-sound :runethrow 0.5 false)
+  (sound/play-sound :runethrow 0.2 false)
   (go
     (c/with-sprite container
       [sprite (s/make-sprite :rune-1 :scale 0.5 :yhandle 0 :x (vec2/get-x pos) :y (vec2/get-y pos))]
@@ -250,7 +260,7 @@
                           p))]
 
         ;; megalith rise
-        (sound/play-sound :monolith 0.5 false)
+        (sound/play-sound :monolith 0.3 false)
         (s/set-texture! sprite :megalith)
         (s/set-scale! sprite 1)
         (s/set-anchor-y! sprite 0.5)
@@ -331,6 +341,24 @@
 (defn sin [amp freq n]
   (* amp (Math/sin (* n freq))))
 
+(defn set-beams [beam-1 beam-2 beam-3 x y fnum]
+  (s/set-pos! beam-1 (+ x (* 3.5 64)
+                        (sin 4 0.1 fnum)
+                        (sin 4 0.3 fnum)
+                        ) (- y 5000))
+  (s/set-alpha! beam-1 (min 1 (+ 0.8 (rand))))
+  (s/set-scale! beam-1 1 1)
+
+  (s/set-pos! beam-2 (+ x (* 3.75 64) (sin 8 0.12 fnum)) (- y 5000))
+  (s/set-alpha! beam-2 (min 1 (+ 0.2 (rand))))
+  (s/set-scale! beam-2 0.5 1)
+
+  (s/set-pos! beam-3 (int (+ x (* 3.875 64) (sin 8 0.08 fnum)))
+              (int (- y 5000)))
+  (s/set-alpha! beam-3 (min 1 (+ 0.2 (rand))))
+  (s/set-scale! beam-3 0.25 1)
+  )
+
 (defonce main
   (go
     ;; load image tilesets
@@ -390,7 +418,7 @@
               (recur (+ n 0.1))))))
       )
 
-    (sound/play-sound :arabian 0.5 true)
+    (sound/play-sound :arabian 0.3 true)
     (state/reset-state!)
 
     ;; make the tile texture lookup
@@ -399,8 +427,7 @@
           walk (t/sub-texture (r/get-texture :tiles :nearest) [(* 4 16) (* 4 96)] [64 64])
           tilemap-order-lookup (tm/make-tiles-struct tile-set tm/tile-map)
 
-          dynamite (make-text-display :rune-1 0 :numbers 10)
-          gold (make-text-display :gold -64 :numbers 0)
+          rune-display (make-text-display :rune-1 0 :numbers 0)
 
           heart-position (vec2/vec2 4 4)
           ]
@@ -432,6 +459,30 @@
                       [0 0] [1024 1024])
                      10000 10000)
 
+         ;; {:size [64 64] :pos [(* 15 64) (* 6 64)]}
+         beam-1 (js/PIXI.TilingSprite.
+                 (t/sub-texture
+                  (r/get-texture :tiles :nearest)
+                  [(+ 10 (* 15 64)) (* 6 64)]
+                  [44 1]
+                  )
+                 64 10000)
+
+         beam-2 (js/PIXI.TilingSprite.
+                 (t/sub-texture
+                  (r/get-texture :tiles :nearest)
+                  [(+ 10 (* 15 64)) (* 8 64)]
+                  [44 1]
+                  )
+                 64 10000)
+
+         beam-3 (js/PIXI.TilingSprite.
+                 (t/sub-texture
+                  (r/get-texture :tiles :nearest)
+                  [(+ 10 (* 15 64)) (* 10 64)]
+                  [44 1]
+                  )
+                 44 10000)
 
 
          dynamites (s/make-container :scale 1 :particle false)
@@ -477,6 +528,7 @@
 
         (enemy/spawn enemies (vec2/vec2 43 0))
         (heart/spawn behind-player heart-position)
+        (pickup/spawn behind-player :rune 0 (vec2/vec2 3 3))
 
         (s/set-scale! background 1)
         (s/set-scale! background-2 1)
@@ -486,8 +538,6 @@
                old-vel (vec2/vec2 0 0)
                ppos (vec2/vec2 1.5 4.5)
                jump-pressed 0
-               gold-num 0
-               dynamite-num 10
                last-x-pressed? (e/is-pressed? :x)
                facing :left
                ]
@@ -552,6 +602,8 @@
 
             (s/set-pos! foreground (int x) (int y))
 
+            (set-beams beam-1 beam-2 beam-3 x y fnum)
+
             (s/set-pos! background
                         (+ -5000 (mod (int (* x 0.90)) 1024))
                         (+ -5000 (mod (int (* y 0.90)) 1024)))
@@ -579,23 +631,6 @@
                                             (= square-below :ladder-top))
 
                   on-ladder? (#{:ladder :ladder-top} square-standing-on)
-
-                  on-gold? (= :gold square-standing-on)
-                  new-gold (or
-                            (when on-gold?
-                              (when (tilemap-order-lookup [pix piy])
-                                (let [child
-                                      (.getChildAt tilemap
-                                                   (tilemap-order-lookup [pix piy]))]
-                                  (when (= 1 (.-alpha child))
-                                    (s/set-alpha! child 0)
-                                    (>! gold (inc gold-num))
-                                    (inc gold-num)))))
-                            gold-num)
-
-                  new-dynamite (if (e/is-pressed? :r) (inc dynamite-num) dynamite-num)
-                  _ (when (not= dynamite-num new-dynamite)
-                      (>! dynamite new-dynamite))
 
                   ladder-up? (#{:ladder :ladder-top} square-standing-on)
                   ladder-down? (#{:ladder :ladder-top} square-below)
@@ -713,19 +748,19 @@
                               (-> (vec2/sub con-pos old-pos)
                                   (vec2/set-y 0)))
 
-                  new-dynamite
-                  (if (and (pos? new-dynamite) (not last-x-pressed?) (e/is-pressed? :x))
-                    (do (make-dynamite
-                         dynamites ppos old-vel fnum)
-                        (>! dynamite (dec new-dynamite))
-                        (dec new-dynamite))
-                    new-dynamite)]
+                  ]
+              (when (and (pos? (:runes @state/state))
+                         (not last-x-pressed?)
+                         (e/is-pressed? :x))
+                (make-dynamite
+                      dynamites ppos old-vel fnum)
+                (swap! state/state update :runes dec))
 
               (when (and (jump-button-pressed?) standing-on-ground?)
-                (sound/play-sound :jump 0.5 false))
+                (sound/play-sound :jump 0.3 false))
 
               (when (> (vec2/magnitude-squared (vec2/sub original-vel old-vel)) 0.01)
-                (sound/play-sound :thud 0.2 false)
+                (sound/play-sound :thud 0.06 false)
                 )
 
               (case facing
@@ -739,8 +774,10 @@
                             (e/is-pressed? :q)
 
                             ;; have we hit a deathtile?
-                            (#{:death-tile-upper
-                               :death-tile-lower}
+                            (#{:death-tile-upper-1
+                               :death-tile-upper-2
+                               :death-tile-lower-1
+                               :death-tile-lower-2}
                              square-on
                              )
                             )
@@ -774,8 +811,6 @@
                        old-vel
                        con-pos
                        jump-pressed
-                       new-gold
-                       new-dynamite
                        (e/is-pressed? :x)
                        (case (Math/sign joy-dx)
                          -1 :left
@@ -786,7 +821,7 @@
                   ;; you get hit by enemy
                   ;; dead
                   (do
-                    (sound/play-sound :death 0.5 false)
+                    (sound/play-sound :death 0.3 false)
 
                     ;; particles
                     (doseq [n (range 32)]

@@ -43,7 +43,6 @@
     })
 
 (defn remapv [y-1 y y+1]
-  (js/console.log y-1 y y+1)
   (match [y-1 y y+1]
          [(_ :guard (complement (conj all-dirt :dirt-top-left :dirt-top-right)))
           (_ :guard all-dirt)
@@ -179,6 +178,13 @@
                                    :grass-fg-2
                                    :grass-fg-3])
 
+                        :death-tile-upper
+                        (rand-nth [:death-tile-upper-1 :death-tile-upper-2])
+
+                        :death-tile-lower
+                        (rand-nth [:death-tile-lower-1 :death-tile-lower-2])
+
+
                         :block
                         (rand-nth [:block-1 :block-1 :block-1 :block-1 :block-1
                                    :block-1 :block-1 :block-1 :block-1 :block-1
@@ -265,8 +271,11 @@
          :block-4 [(* 3 64) (* 4 64)]
          :block-5 [(* 4 64) (* 4 64)]
 
-         :death-tile-upper [(* 7 64) (* 2 64)]
-         :death-tile-lower [(* 7 64) (* 2 64)]
+         :death-tile-upper-1 [(* 6 64) (* 4 64)]
+         :death-tile-upper-2 [(* 7 64) (* 4 64)]
+
+         :death-tile-lower-1 [(* 8 64) (* 4 64)]
+         :death-tile-lower-2 [(* 9 64) (* 4 64)]
 
          }
         ]

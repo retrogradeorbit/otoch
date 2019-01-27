@@ -3,7 +3,8 @@
 
 (def initial-state
   {:pos (vec2/vec2 0 0)
-   :touched-heart? false})
+   :touched-heart? false
+   :runes 0})
 
 (defonce state
   (atom initial-state))
