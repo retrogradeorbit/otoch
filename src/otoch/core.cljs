@@ -45,7 +45,8 @@
 
    :megalith {:size [64 64] :pos [(* 4 64) (* 2 64)]}
 
-   :enemy {:size [64 64] :pos [(* 64 3) (* 64 7)]}
+   :enemy-1 {:size [64 64] :pos [(* 64 3) (* 64 7)]}
+   :enemy-2 {:size [64 64] :pos [(* 64 5) (* 64 7)]}
 
    :star-1 {:size [16 16] :pos [64 (* 9 64)]}
    :star-2 {:size [16 16] :pos [(+ 16 64) (* 9 64)]}
@@ -541,7 +542,8 @@
 
            ]
 
-          (enemy/spawn enemies (vec2/vec2 43 0))
+          (enemy/spawn enemies (vec2/vec2 43 0) :enemy-1)
+          (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
           (heart/spawn behind-player heart-position)
           (pickup/spawn behind-player :rune 0 (vec2/vec2 3 3))
 
