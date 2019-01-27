@@ -550,7 +550,7 @@
           (enemy/spawn enemies (vec2/vec2 43 0) :enemy-1)
           (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
 
-          #_(doseq [[xp yp] [[98 393]
+          (doseq [[xp yp] [[98 393]
                          [53 400]
                          [161 397]
                          [134 408]
