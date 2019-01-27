@@ -29,13 +29,6 @@
 
 (enable-console-print!)
 
-(println "This text is printed from src/otoch/core.cljs. Go ahead and edit it and see reloading in action.")
-
-;; define your app data so that it doesn't get over-written on reload
-
-(defonce app-state (atom {:text "Hello world!"}))
-
-
 (defn on-js-reload []
   ;; optionally touch your app-state to force rerendering depending on
   ;; your application
@@ -105,6 +98,12 @@
    :gold {:size [16 16] :pos [0 32]}
    })
 
+;; when player finished he wobbles around
+(def y-amp (/ 7 64))
+(def y-freq (/ 7 200))
+(def x-amp (/ 10 64))
+(def x-freq (/ 11 200))
+
 (defn make-foreground-map [bg-map-lines]
   (tm/mapv-mapv
    bg-map-lines
@@ -128,10 +127,19 @@
 
 (s/set-default-scale! 1)
 
-(defn set-player [player x y px py]
+(defn set-player
+  "x y is scroll position.
+  px, py is tile unit based position of player"
+  [player x y px py]
+  (js/console.log "->" (+ x (* 16 4 px)) (+ y (* 16 4 py)))
+  (swap! state/state assoc :pos (vec2/vec2 px py))
   (s/set-pos!
    player
    (+ x (* 16 4 px)) (+ y (* 16 4 py))))
+
+(defn set-player-heart [player heart-position x y]
+  (js/console.log "pos:" (vec2/add (vec2/scale heart-position 64) (vec2/vec2 x y)))
+  (s/set-pos! player heart-position))
 
 
 (defn hollow
@@ -320,6 +328,8 @@
            (when r
              (recur r))))))
 
+(defn sin [amp freq n]
+  (* amp (Math/sin (* n freq))))
 
 (defonce main
   (go
@@ -381,6 +391,7 @@
       )
 
     (sound/play-sound :arabian 0.5 true)
+    (state/reset-state!)
 
     ;; make the tile texture lookup
     (let [tile-set (tm/make-tile-set :tiles)
@@ -390,6 +401,8 @@
 
           dynamite (make-text-display :rune-1 0 :numbers 10)
           gold (make-text-display :gold -64 :numbers 0)
+
+          heart-position (vec2/vec2 4 4)
           ]
 
       #_(c/with-sprite canvas :tilemap
@@ -446,6 +459,9 @@
          ;;            :xhandle 0 :yhandle 0
          ;;            :scale 1
          ;;            :particle true)
+
+         behind-player (s/make-container)
+
          player (s/make-sprite stand :scale 1)
          foreground (s/make-container
                      :children (tm/make-tiles tile-set (into [] (make-foreground-map tm/tile-map)))
@@ -460,7 +476,7 @@
          ]
 
         (enemy/spawn enemies (vec2/vec2 43 0))
-        (heart/spawn enemies (vec2/vec2 4 4))
+        (heart/spawn behind-player heart-position)
 
         (s/set-scale! background 1)
         (s/set-scale! background-2 1)
@@ -512,7 +528,10 @@
                             (if (> (Math/abs (vec2/get-x joy)) 0.02)
                               (if (zero? (mod (int (/ fnum 10)) 2)) stand walk)
                               stand))
+
+            ;; player still playing
             (set-player player x y px py)
+
             (s/set-pos! dynamites x y)
 
             ;;(js/console.log "===>" (str platforms-this-frame))
@@ -545,6 +564,7 @@
             ;; (swap! state/state assoc :pos (vec2/vec2 x y))
 
             (s/set-pos! enemies (int x) (int y))
+            (s/set-pos! behind-player (int x) (int y))
 
             (<! (e/next-frame))
                                         ;(log dy minus-v-edge)
@@ -715,23 +735,56 @@
 
               ;; have we collided with any enemies?
               (let [die? (enemy/collided? con-pos)]
-                (if-not (or die? (e/is-pressed? :q))
-                  (recur
-                   next-state
-                   (inc fnum)
-                   old-vel
-                   con-pos
-                   jump-pressed
-                   new-gold
-                   new-dynamite
-                   (e/is-pressed? :x)
-                   (case (Math/sign joy-dx)
-                     -1 :left
-                     0 facing
-                     1 :right
-                     ))
+                (if-not (or die?
+                            (e/is-pressed? :q)
+
+                            ;; have we hit a deathtile?
+                            (#{:death-tile-upper
+                               :death-tile-lower}
+                             square-on
+                             )
+                            )
+                  ;; still alive
+                  (do
+
+                    (if (-> @state/state :touched-heart?)
+                      ;; finished!
+                      (loop [fnum fnum]
+
+                        (let [[x y] [0 0]]
+                          (s/set-pos! player
+                                      (vec2/scale
+                                       (vec2/vec2
+                                        (+ x (sin x-amp x-freq fnum))
+                                        (+ y (sin y-amp y-freq fnum))
+                                        )
+                                       64))
+                          #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
+
+                        (<! (e/next-frame))
+
+                        (recur (inc fnum))
+
+                        )
+
+                      ;; still playing
+                      (recur
+                       next-state
+                       (inc fnum)
+                       old-vel
+                       con-pos
+                       jump-pressed
+                       new-gold
+                       new-dynamite
+                       (e/is-pressed? :x)
+                       (case (Math/sign joy-dx)
+                         -1 :left
+                         0 facing
+                         1 :right
+                         ))))
 
                   ;; you get hit by enemy
+                  ;; dead
                   (do
                     (sound/play-sound :death 0.5 false)
 
