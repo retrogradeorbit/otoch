@@ -65,5 +65,4 @@
             ;; picked up
             (do
               (swap! state/state update :runes inc)
-              (sound/play-sound :collect 0.5 false))
-            ))))))
+              (sound/play-sound :collect 0.5 false))))))))

@@ -144,7 +144,7 @@
   "x y is scroll position.
   px, py is tile unit based position of player"
   [player x y px py]
-  (js/console.log "->" (+ x (* 16 4 px)) (+ y (* 16 4 py)))
+  ;;(js/console.log "->" (+ x (* 16 4 px)) (+ y (* 16 4 py)))
   (swap! state/state assoc :pos (vec2/vec2 px py))
   (s/set-pos!
    player
@@ -566,8 +566,8 @@
             (enemy/spawn enemies (vec2/vec2 (- xp 9) (- yp 358)) (rand-nth [:enemy-1 :enemy-2]))
             )
 
-          (enemy/spawn enemies (vec2/vec2 43 0) :enemy-1)
-          (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
+          ;; (enemy/spawn enemies (vec2/vec2 43 0) :enemy-1)
+          ;; (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
           (heart/spawn behind-player heart-position)
           (pickup/spawn behind-player :rune 0 (vec2/vec2 3 3))
 
@@ -821,6 +821,7 @@
 
                 ;; have we collided with any enemies?
                 (let [die? (enemy/collided? con-pos)]
+                  (js/console.log "die?" die?)
                   (if-not (or die?
                               (e/is-pressed? :q)
 
@@ -885,7 +886,7 @@
                                                          ) 0.1)
                                    (vec2/scale old-vel 0.33)
                                    )]
-                          (js/console.log (str vel))
+                          ;;(js/console.log (str vel))
                           (particle/spawn enemies
                                           (rand-nth [:blood-1 :blood-2 :blood-3 :blood-4
                                                      :blood-5 :blood-6 :blood-7 :blood-8

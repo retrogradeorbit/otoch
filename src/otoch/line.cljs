@@ -1,8 +1,7 @@
 (ns otoch.line
   (:require [infinitelives.utils.console :refer [log]]
             [infinitelives.utils.vec2 :as vec2]
-            [cljs.core.match :refer-macros [match]]
-))
+            [cljs.core.match :refer-macros [match]]))
 
 
 (defn octant-of [x0 y0 x1 y1]
@@ -79,7 +78,6 @@
                    (* (- x x0)
                       (/ (- y1 y0)
                          (- x1 x0))))))))
-
 
 (defn intify [s]
   (for [[x y] s]
