@@ -551,7 +551,7 @@
                  state :walking
                  fnum 0
                  old-vel (vec2/vec2 0 0)
-                 ppos (vec2/vec2 1.5 4.5)
+                 ppos (vec2/vec2 62 4.5)
                  jump-pressed 0
                  last-x-pressed? (e/is-pressed? :x)
                  facing :left
