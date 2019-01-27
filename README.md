@@ -1,18 +1,14 @@
-# otoch
+Mayan Megalithic Mayhem!
 
-Space knave plunders a deep space dreadnought for alien artefacts and space-dollars.
+a shaman stuck in the forest on a distant world u crave the comfort of hearth and home but how will u get there?
+
+![Screenshot](screenshot.png)
 
 [PLAY IT NOW!](https://retrogradeorbit.github.io/otoch/)
 
 ## Overview
 
 For Global Game Jam 2019
-
-FIXME: Write a one-line description of your library/project.
-
-## Overview
-
-FIXME: Write a paragraph about the library/project and highlight its goals.
 
 ## Setup
 
