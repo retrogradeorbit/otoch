@@ -87,22 +87,22 @@
    :blood-15 {:size [16 16] :pos [(+ 32 128) (+ 48 (* 9 64))]}
    :blood-16 {:size [16 16] :pos [(+ 48 128) (+ 48 (* 9 64))]}
 
-   :explosion-1 {:size [16 16] :pos [48 48]}
-   :explosion-2 {:size [16 16] :pos [64 48]}
-   :explosion-3 {:size [16 16] :pos [80 48]}
-   :explosion-4 {:size [16 16] :pos [96 48]}
-   :explosion-5 {:size [16 16] :pos [112 48]}
-   :explosion-6 {:size [16 16] :pos [128 48]}
-
    :heart {:size [128 128] :pos [(* 14 64) (* 3 64)]}
-
-   :gold {:size [16 16] :pos [0 32]}
 
    :beam-1 {:size [64 64] :pos [(* 15 64) (* 6 64)]}
    :beam-2 {:size [64 64] :pos [(* 15 64) (* 8 64)]}
    :beam-3 {:size [64 64] :pos [(* 15 64) (* 10 64)]}
 
    :rune {:size [64 64] :pos [(* 3 64) (* 9 64)]}
+
+   :tree-1 {:size [64 128] :pos [(* 0 64) (* 11 64)]}
+   :tree-2 {:size [64 128] :pos [(* 1 64) (* 11 64)]}
+   :tree-3 {:size [128 128] :pos [(* 2 64) (* 11 64)]}
+   :tree-4 {:size [128 128] :pos [(* 4 64) (* 11 64)]}
+   :tree-5 {:size [192 192] :pos [(* 6 64) (* 10 64)]}
+   :tree-6 {:size [128 256] :pos [(* 9 64) (* 9 64)]}
+   :tree-7 {:size [64 128] :pos [(* 12 64) (* 11 64)]}
+   :tree-8 {:size [64 128] :pos [(* 13 64) (* 11 64)]}
 
    })
 
@@ -213,7 +213,7 @@
         [x y] spos]
     (s/set-pos! sprite
 ;                spos
-                (int x) (int y)
+                (int x) (int (+ 32 y))
                 )))
 
 (defn megalith-fn [start-frame n]
@@ -224,7 +224,7 @@
   (sound/play-sound :runethrow 0.2 false)
   (go
     (c/with-sprite container
-      [sprite (s/make-sprite :rune-1 :scale 0.5 :yhandle 0 :x (vec2/get-x pos) :y (vec2/get-y pos))]
+      [sprite (s/make-sprite :rune-1 :scale 0.5 :yhandle 1 :x (vec2/get-x pos) :y (vec2/get-y pos))]
       (let [final-pos (loop [n 0
                              p pos
                              v vel]
@@ -260,73 +260,86 @@
                           p))]
 
         ;; megalith rise
-        (sound/play-sound :monolith 0.3 false)
-        (s/set-texture! sprite :megalith)
-        (s/set-scale! sprite 1)
-        (s/set-anchor-y! sprite 0.5)
+        (let [tree (rand-nth [:tree-1 :tree-2 :tree-3 :tree-4
+                              :tree-5 :tree-6 :tree-7 :tree-8])
+              tree-height ({:tree-1 128
+                            :tree-2 128
+                            :tree-3 128
+                            :tree-4 128
+                            :tree-5 192
+                            :tree-6 256
+                            :tree-7 128
+                            :tree-8 128
+                            } tree)
+              tile-height (/ tree-height 64)]
+          (sound/play-sound :monolith 0.3 false)
+          (s/set-texture! sprite tree)
 
-        (let [[final-pos final-vel] (loop [n 300
-                                           p final-pos
-                                           v (vec2/zero)
-                                           rise 1
-                                           ]
-                                      (megalith-set-pos! sprite (vec2/add p (vec2/vec2 0 rise)))
+          (s/set-scale! sprite 1)
+          (s/set-anchor-y! sprite 1)
 
-                                      (<! (e/next-frame))
+          (let [[final-pos final-vel] (loop [n 300
+                                             p final-pos
+                                             v (vec2/zero)
+                                             rise 1
+                                             ]
+                                        (megalith-set-pos! sprite (vec2/add p (vec2/vec2 0 (* tile-height rise))))
 
-                                      (if (< n (+ 300 300))
-                                        (let [platform-state
+                                        (<! (e/next-frame))
+
+                                        (if (< n (+ 300 300))
+                                          (let [platform-state
+                                                (-> platforms/platforms
+                                                    (platforms/prepare-platforms n)
+                                                    (platforms/filter-platforms (vec2/zero)))
+                                                new-pos
+                                                (constraints/constrain-pos
+                                                 constraints/dynamite-constrain
                                                  (-> platforms/platforms
-                                                     (platforms/prepare-platforms n)
-                                                     (platforms/filter-platforms (vec2/zero)))
-                                                 new-pos
-                                                 (constraints/constrain-pos
-                                                  constraints/dynamite-constrain
-                                                  (-> platforms/platforms
-                                                      (platforms/prepare-platforms (megalith-fn start-frame n))
-                                                      (platforms/filter-platforms p))
-                                                  p (vec2/add p v))
-                                                 new-vel (-> new-pos
-                                                             (vec2/sub p)
-                                                             (vec2/add consts/gravity)
-                                                             (vec2/scale 0.98))]
-                                             (recur (inc n)
-                                                    new-pos
-                                                    new-vel
-                                                    (- rise (/ 1 300))))
+                                                     (platforms/prepare-platforms (megalith-fn start-frame n))
+                                                     (platforms/filter-platforms p))
+                                                 p (vec2/add p v))
+                                                new-vel (-> new-pos
+                                                            (vec2/sub p)
+                                                            (vec2/add consts/gravity)
+                                                            (vec2/scale 0.98))]
+                                            (recur (inc n)
+                                                   new-pos
+                                                   new-vel
+                                                   (- rise (/ 1 300))))
 
-                                        [p v]))]
+                                          [p v]))]
 
-          ;; megalith runs forever
-          (loop [
-                 n (+ 300 300)
-                 p final-pos
-                 v final-vel
-                 ]
-            (megalith-set-pos! sprite p)
-            (<! (e/next-frame))
+            (swap! state/state update :trees inc)
 
-            (let [platform-state
-                  (-> platforms/platforms
-                      (platforms/prepare-platforms n)
-                      (platforms/filter-platforms (vec2/zero)))
-                  new-pos
-                  (constraints/constrain-pos
-                   constraints/dynamite-constrain
-                   (-> platforms/platforms
-                       (platforms/prepare-platforms (megalith-fn start-frame n))
-                       (platforms/filter-platforms p))
-                   p (vec2/add p v))
-                  new-vel (-> new-pos
-                              (vec2/sub p)
-                              (vec2/add consts/gravity)
-                              (vec2/scale 0.98))]
-              (recur (inc n)
-                     new-pos
-                     new-vel
-                     ))))
+            ;; megalith runs forever
+            (loop [
+                   n (+ 300 300)
+                   p final-pos
+                   v final-vel
+                   ]
+              (megalith-set-pos! sprite p)
+              (<! (e/next-frame))
 
-        )
+              (let [platform-state
+                    (-> platforms/platforms
+                        (platforms/prepare-platforms n)
+                        (platforms/filter-platforms (vec2/zero)))
+                    new-pos
+                    (constraints/constrain-pos
+                     constraints/dynamite-constrain
+                     (-> platforms/platforms
+                         (platforms/prepare-platforms (megalith-fn start-frame n))
+                         (platforms/filter-platforms p))
+                     p (vec2/add p v))
+                    new-vel (-> new-pos
+                                (vec2/sub p)
+                                (vec2/add consts/gravity)
+                                (vec2/scale 0.98))]
+                (recur (inc n)
+                       new-pos
+                       new-vel
+                       ))))))
 
       ;; explode
       #_ (loop [[f & r] [:explosion-1 :explosion-2
@@ -764,6 +777,9 @@
                 (when (> (vec2/magnitude-squared (vec2/sub original-vel old-vel)) 0.01)
                   (sound/play-sound :thud 0.06 false)
                   )
+
+                (when (e/is-pressed? :r)
+                  (swap! state/state update :runes inc))
 
                 (case facing
                   :left (s/set-scale! player -1 1)

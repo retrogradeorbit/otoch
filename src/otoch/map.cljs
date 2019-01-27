@@ -44,15 +44,29 @@
     })
 
 (defn remapv [y-1 y y+1]
-  (match [y-1 y y+1]
-         [(_ :guard (complement (conj all-dirt :dirt-top-left :dirt-top-right)))
-          (_ :guard all-dirt)
-          _]
-         (rand-nth [:dirt-top-1 :dirt-top-2 :dirt-top-3])
+  (let [res (match [y-1 y y+1]
+                   ;; [(_ :guard (complement (conj all-dirt :dirt-top-left :dirt-top-right)))
+                   ;;  (_ :guard all-dirt)
+                   ;;  (_ :guard (complement (conj all-dirt :dirt-top-left :dirt-top-right)))
+                   ;;  ]
+                   ;; (rand-nth [:grassy])
 
-         ;; default: dont change tile
-         [_ _ _]
-         y))
+                   [(_ :guard (complement (conj all-dirt :dirt-top-left :dirt-top-right)))
+                    (_ :guard all-dirt)
+                    _]
+                   (rand-nth [:dirt-top-1 :dirt-top-2 :dirt-top-3])
+
+[_
+                    (_ :guard all-dirt)
+                    (_ :guard (complement all-dirt))
+                    ]
+                   (rand-nth [:dirt-under-1 :dirt-under-2])
+
+                   ;; default: dont change tile
+                   [_ _ _]
+                   y)]
+    ;;(js/console.log (str y-1) "," (str y) "," (str y+1) "=>" (str res))
+    res))
 
 (defn remaph [x-1 x x+1]
   (match [x-1 x x+1]
@@ -245,6 +259,9 @@
          :dirt-9 [(* 8 64) 64]
          :dirt-10 [(* 9 64) 64]
          :dirt-11 [(* 10 64) 64]
+
+         :dirt-under-1 [(* 11 64) 64]
+         :dirt-under-2 [(* 12 64) 64]
 
          :dirt-top-left [(* 8 64) 0]
          :dirt-top-1 [(* 9 64) 0]
