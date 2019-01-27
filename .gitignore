@@ -13,3 +13,8 @@ pom.xml
 .nrepl-port
 .*.swp
 /checkouts/
+/resources/public/music/*.wav
+/resources/public/music/*.mp3
+/resources/public/sfx/*.ogg
+/resources/public/sfx/*.mp3
+/build
