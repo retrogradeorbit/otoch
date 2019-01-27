@@ -39,6 +39,9 @@
 
 (defonce bg-colour 0x60a0c0)
 
+(def num-enemies 20)
+(def num-runes 20)
+
 (def sprite-sheet-layout
   {
    :rune-1 {:pos [(* 3 64) (* 9 64)] :size [64 64]}
@@ -544,8 +547,34 @@
 
           (enemy/spawn enemies (vec2/vec2 43 0) :enemy-1)
           (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
+
+          #_(doseq [[xp yp] [[98 393]
+                         [53 400]
+                         [161 397]
+                         [134 408]
+                         [153 407]
+                         [145 379]
+                         [82 385]
+                         [36 389]
+                         [62 375]
+                         [143 379]
+                         [17 370]
+                         [120 368]]
+                ]
+            (enemy/spawn enemies (vec2/vec2 (- xp 9) (- yp 358)) (rand-nth [:enemy-1 :enemy-2]))
+            )
+
+          (enemy/spawn enemies (vec2/vec2 43 0) :enemy-1)
+          (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
           (heart/spawn behind-player heart-position)
           (pickup/spawn behind-player :rune 0 (vec2/vec2 3 3))
+
+          #_ (doseq [n (range num-enemies)]
+               (enemy/spawn enemies (vec2/vec2 (int (* 100 (rand))) (int (* 60 (rand))))
+                            (rand-nth [:enemy-1 :enemy-2])))
+
+          (doseq [n (range num-runes)]
+            (pickup/spawn behind-player :rune 0 (vec2/vec2 (int (* 100 (rand))) (int (* 60 (rand))))))
 
           (s/set-scale! background 1)
           (s/set-scale! background-2 1)
@@ -814,11 +843,11 @@
                               (let [[x y] [0 0]]
                                 (s/set-pos! player
                                             (vec2/scale
-                                              (vec2/vec2
-                                                (+ x (sin x-amp x-freq fnum))
-                                                (+ y (sin y-amp y-freq fnum))
-                                                )
-                                              64))
+                                             (vec2/vec2
+                                              (+ x (sin x-amp x-freq fnum))
+                                              (+ y (sin y-amp y-freq fnum))
+                                              )
+                                             64))
                                 #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
 
                               (<! (e/next-frame))
@@ -829,17 +858,17 @@
 
                         ;; still playing
                         (recur
-                          next-state
-                          (inc fnum)
-                          old-vel
-                          con-pos
-                          jump-pressed
-                          (e/is-pressed? :x)
-                          (case (Math/sign joy-dx)
-                            -1 :left
-                            0 facing
-                            1 :right
-                            ))))
+                         next-state
+                         (inc fnum)
+                         old-vel
+                         con-pos
+                         jump-pressed
+                         (e/is-pressed? :x)
+                         (case (Math/sign joy-dx)
+                           -1 :left
+                           0 facing
+                           1 :right
+                           ))))
 
                     ;; you get hit by enemy
                     ;; dead

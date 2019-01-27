@@ -31,13 +31,17 @@
 (defn collided?
   "given the players pos, find the first collided enemy"
   [player-pos]
-  (->>
-   (for [[k {:keys [pos]}] @enemies]
-     (let [distance-squared (vec2/magnitude-squared (vec2/sub player-pos pos))]
-       (when (< distance-squared 0.5)
-         k)))
-   (map identity)
-   first))
+  (let [coll (->>
+              (for [[k {:keys [pos]}] @enemies]
+                (let [distance-squared (vec2/magnitude-squared (vec2/sub player-pos pos))]
+                  ;;(js/console.log "->" distance-squared)
+                  (when (< distance-squared 0.5)
+                    k)))
+              (map identity)
+              first)]
+    ;;(js/console.log coll "!!!")
+    coll
+    ))
 
 (def reverse-dir
   {:left :right
