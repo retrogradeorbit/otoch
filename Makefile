@@ -3,14 +3,23 @@ APP=build/js/compiled/otoch.js
 IDX=build/index.html
 IMG=build/img/*.png
 IMG_PUBLIC=$(subst build,resources/public,$(IMG))
-SFX_SOURCE=$(wildcard resources/public/sfx/*.ogg)
-SFX=$(subst resources/public,build,$(SFX_SOURCE))
+SFX_SOURCE=$(wildcard resources/public/sfx/*.wav)
+SFX_OGGS=$(subst .wav,.ogg,$(SFX_SOURCE))
+SFX_MP3S=$(subst .wav,.mp3,$(SFX_SOURCE))
+SFX=$(subst resources/public,build,$(SFX_OGGS)) $(subst resources/public,build,$(SFX_MP3S))
 MUSIC_SOURCE=$(wildcard resources/public/music/*.ogg)
-MUSIC=$(subst resources/public,build,$(MUSIC_SOURCE))
+MUSIC_SOURCE_MP3S=$(subst .ogg,.mp3,$(MUSIC_SOURCE))
+MUSIC=$(subst resources/public,build,$(MUSIC_SOURCE)) $(subst resources/public,build,$(MUSIC_SOURCE_MP3S))
 ME=$(shell basename $(shell pwd))
 REPO=git@github.com:retrogradeorbit/otoch.git
 
-all: $(APP) $(CSS) $(IDX) $(IMG) $(SFX) $(MUSIC)
+all: $(SFX_OGGS) $(SFX_MP3S) $(APP) $(CSS) $(IDX) $(IMG) $(SFX) $(MUSIC)
+
+$(SFX_OGGS): $(SFX_SOURCE)
+	oggenc -o $@ $<
+
+$(SFX_MP3S): $(SFX_SOURCE)
+	lame $< $@
 
 $(CSS): resources/public/css/style.css
 	mkdir -p $(dir $(CSS))
@@ -27,17 +36,21 @@ $(IMG): $(IMG_PUBLIC)
 	mkdir -p build/img/
 	cp $? build/img/
 
-$(SFX): $(SFX_SOURCE)
+$(SFX): $(SFX_OGGS) $(SFX_MP3S)
 	mkdir -p build/sfx/
 	cp $? build/sfx/
 
-$(MUSIC): $(MUSIC_SOURCE)
+$(MUSIC_SOURCE_MP3S): $(MUSIC_SOURCE)
+	ogg123 -d wav -f $(subst .ogg,.wav,$<) $<
+	lame $(subst .ogg,.wav,$<) $@
+
+$(MUSIC): $(MUSIC_SOURCE) $(MUSIC_SOURCE_MP3S)
 	mkdir -p build/music/
 	cp $? build/music/
 
 clean:
 	lein clean
-	rm -rf $(CSS) $(APP) $(IDX) $(IMG) $(SFX) $(MUSIC)
+	rm -rf $(CSS) $(APP) $(IDX) $(IMG) $(SFX) $(MUSIC) $(SFX_OGGS) $(SFX_MP3S)
 
 test-server: all
 	cd build && python -m SimpleHTTPServer
