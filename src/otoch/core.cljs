@@ -806,37 +806,40 @@
 
                       (if (-> @state/state :touched-heart?)
                         ;; finished!
-                        (loop [fnum fnum]
+                        (do (s/set-alpha! beam-1 0)
+                            (s/set-alpha! beam-2 0)
+                            (s/set-alpha! beam-3 0)
+                            (loop [fnum fnum]
 
-                          (let [[x y] [0 0]]
-                            (s/set-pos! player
-                                        (vec2/scale
-                                         (vec2/vec2
-                                          (+ x (sin x-amp x-freq fnum))
-                                          (+ y (sin y-amp y-freq fnum))
-                                          )
-                                         64))
-                            #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
+                              (let [[x y] [0 0]]
+                                (s/set-pos! player
+                                            (vec2/scale
+                                              (vec2/vec2
+                                                (+ x (sin x-amp x-freq fnum))
+                                                (+ y (sin y-amp y-freq fnum))
+                                                )
+                                              64))
+                                #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
 
-                          (<! (e/next-frame))
+                              (<! (e/next-frame))
 
-                          (recur (inc fnum))
+                              (recur (inc fnum))
 
-                          )
+                              ))
 
                         ;; still playing
                         (recur
-                         next-state
-                         (inc fnum)
-                         old-vel
-                         con-pos
-                         jump-pressed
-                         (e/is-pressed? :x)
-                         (case (Math/sign joy-dx)
-                           -1 :left
-                           0 facing
-                           1 :right
-                           ))))
+                          next-state
+                          (inc fnum)
+                          old-vel
+                          con-pos
+                          jump-pressed
+                          (e/is-pressed? :x)
+                          (case (Math/sign joy-dx)
+                            -1 :left
+                            0 facing
+                            1 :right
+                            ))))
 
                     ;; you get hit by enemy
                     ;; dead
