@@ -45,7 +45,8 @@
 
    :megalith {:size [64 64] :pos [(* 4 64) (* 2 64)]}
 
-   :enemy {:size [64 64] :pos [(* 64 3) (* 64 7)]}
+   :enemy-1 {:size [64 64] :pos [(* 64 3) (* 64 7)]}
+   :enemy-2 {:size [64 64] :pos [(* 64 5) (* 64 7)]}
 
    :star-1 {:size [16 16] :pos [64 (* 9 64)]}
    :star-2 {:size [16 16] :pos [(+ 16 64) (* 9 64)]}
@@ -541,7 +542,8 @@
 
            ]
 
-          (enemy/spawn enemies (vec2/vec2 43 0))
+          (enemy/spawn enemies (vec2/vec2 43 0) :enemy-1)
+          (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
           (heart/spawn behind-player heart-position)
           (pickup/spawn behind-player :rune 0 (vec2/vec2 3 3))
 
@@ -804,37 +806,40 @@
 
                       (if (-> @state/state :touched-heart?)
                         ;; finished!
-                        (loop [fnum fnum]
+                        (do (s/set-alpha! beam-1 0)
+                            (s/set-alpha! beam-2 0)
+                            (s/set-alpha! beam-3 0)
+                            (loop [fnum fnum]
 
-                          (let [[x y] [0 0]]
-                            (s/set-pos! player
-                                        (vec2/scale
-                                         (vec2/vec2
-                                          (+ x (sin x-amp x-freq fnum))
-                                          (+ y (sin y-amp y-freq fnum))
-                                          )
-                                         64))
-                            #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
+                              (let [[x y] [0 0]]
+                                (s/set-pos! player
+                                            (vec2/scale
+                                              (vec2/vec2
+                                                (+ x (sin x-amp x-freq fnum))
+                                                (+ y (sin y-amp y-freq fnum))
+                                                )
+                                              64))
+                                #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
 
-                          (<! (e/next-frame))
+                              (<! (e/next-frame))
 
-                          (recur (inc fnum))
+                              (recur (inc fnum))
 
-                          )
+                              ))
 
                         ;; still playing
                         (recur
-                         next-state
-                         (inc fnum)
-                         old-vel
-                         con-pos
-                         jump-pressed
-                         (e/is-pressed? :x)
-                         (case (Math/sign joy-dx)
-                           -1 :left
-                           0 facing
-                           1 :right
-                           ))))
+                          next-state
+                          (inc fnum)
+                          old-vel
+                          con-pos
+                          jump-pressed
+                          (e/is-pressed? :x)
+                          (case (Math/sign joy-dx)
+                            -1 :left
+                            0 facing
+                            1 :right
+                            ))))
 
                     ;; you get hit by enemy
                     ;; dead

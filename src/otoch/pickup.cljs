@@ -17,8 +17,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (defn set-pos [sprite x y n]
-  (s/set-pos! sprite (* 64 x) (* 64 (+ y (* 0.1 (Math/sin (/ n 5))))))
-  )
+  (s/set-pos! sprite (* 64 (+ x (* 0.025 (Math/sin (/ n 7))))) (* 64 (+ y (* 0.1 (Math/sin (/ n 11)))))))
 
 (defn spawn [container texture start-frame start-pos]
   (go

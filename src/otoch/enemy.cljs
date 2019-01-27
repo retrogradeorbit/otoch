@@ -49,12 +49,12 @@
   (+ y (* 4 (Math/sin (/ n 12))))
   )
 
-(defn spawn [container start-pos]
+(defn spawn [container start-pos sprite]
   (go
     (let [ekey (keyword (gensym))
           start-frame 0]
       (c/with-sprite container
-        [enemy (s/make-sprite :enemy :pos (vec2/scale start-pos 64))]
+        [enemy (s/make-sprite sprite :pos (vec2/scale start-pos 64))]
         (swap! enemies assoc ekey {:pos (vec2/scale start-pos 64)} )
         (loop [n 0
                p start-pos
@@ -63,7 +63,7 @@
                ]
           (let [ppos (vec2/scale p 64)
                 [x y] ppos
-                y (wobble y n)
+                y (if (= sprite :enemy-1) (wobble y n) y)
                 ]
             (swap! enemies assoc-in [ekey :pos] (vec2/scale (vec2/vec2 x y) (/ 1 64)))
             (s/set-pos! enemy x y))
