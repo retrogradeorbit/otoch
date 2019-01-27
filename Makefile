@@ -16,10 +16,10 @@ REPO=git@github.com:retrogradeorbit/otoch.git
 all: $(SFX_OGGS) $(SFX_MP3S) $(APP) $(CSS) $(IDX) $(IMG) $(SFX) $(MUSIC)
 
 $(SFX_OGGS): $(SFX_SOURCE)
-	oggenc -o $@ $<
+	oggenc -o $@ $(subst .ogg,.wav,$@)
 
 $(SFX_MP3S): $(SFX_SOURCE)
-	lame $< $@
+	lame $(subst .mp3,.wav,$@) $@
 
 $(CSS): resources/public/css/style.css
 	mkdir -p $(dir $(CSS))
