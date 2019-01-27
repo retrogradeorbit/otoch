@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# This syncs exported Quill sketches in PDF format from the Thinkpad tablet
+# and then splits the PDF into separate pages for importing bits into Inkscape
+
+cd .. && adb pull /mnt/sdcard/Sketch && cd Sketch
+pages=`pdftk Default_Quill_notebook.pdf dump_data | grep -i NumberOfPages | cut -d" " -f2`
+for x in `seq $pages`; do pdftk Default_Quill_notebook.pdf cat $x output otoch-$x.pdf; done
