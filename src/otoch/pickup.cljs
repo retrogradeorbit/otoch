@@ -3,6 +3,7 @@
             [infinitelives.utils.events :as e]
             [infinitelives.utils.boid :as b]
             [infinitelives.utils.math :as math]
+            [infinitelives.utils.async :as async]
             [infinitelives.utils.sound :as sound]
             [infinitelives.utils.spatial :as spatial]
             [infinitelives.utils.sound :as sound]
@@ -20,49 +21,51 @@
   (s/set-pos! sprite (* 64 (+ x (* 0.025 (Math/sin (/ n 7))))) (* 64 (+ y (* 0.1 (Math/sin (/ n 11)))))))
 
 (defn spawn [container texture start-frame start-pos]
-  (go
-    (c/with-sprite container
-      [pickup (s/make-sprite texture :pos (vec2/scale start-pos 64)
-                             :scale .5)]
-      (loop [n 0
-             p start-pos
-             v (vec2/zero)
-             ]
-        (let [[x y] p]
-          (set-pos pickup x y n))
-        (<! (e/next-frame))
-        (let [player-pos (:pos @state/state)
-              distance-squared (vec2/magnitude-squared (vec2/sub player-pos p))
+  (let [start-game-num (:game-num @state/state)]
+    (async/go-while
+     (= start-game-num (:game-num @state/state))
+     (c/with-sprite container
+       [pickup (s/make-sprite texture :pos (vec2/scale start-pos 64)
+                              :scale .5)]
+       (loop [n 0
+              p start-pos
+              v (vec2/zero)
               ]
-          (if (> distance-squared 0.1)
-            ;; still alive
-            (let [platform-state
-                  (-> platforms/platforms
-                      (platforms/prepare-platforms n)
-                      (platforms/filter-platforms (vec2/zero)))
-
-                  new-pos
-                  (constraints/constrain-pos
-                   constraints/pickup-constrain
+         (let [[x y] p]
+           (set-pos pickup x y n))
+         (<! (e/next-frame))
+         (let [player-pos (:pos @state/state)
+               distance-squared (vec2/magnitude-squared (vec2/sub player-pos p))
+               ]
+           (if (> distance-squared 0.1)
+             ;; still alive
+             (let [platform-state
                    (-> platforms/platforms
-                       (platforms/prepare-platforms (+ 1 start-frame n))
-                       (platforms/filter-platforms p))
-                   p (vec2/add p v))
+                       (platforms/prepare-platforms n)
+                       (platforms/filter-platforms (vec2/zero)))
 
-                  new-vel (-> new-pos
-                              (vec2/sub p)
+                   new-pos
+                   (constraints/constrain-pos
+                    constraints/pickup-constrain
+                    (-> platforms/platforms
+                        (platforms/prepare-platforms (+ 1 start-frame n))
+                        (platforms/filter-platforms p))
+                    p (vec2/add p v))
 
-                              (vec2/add consts/gravity)
-                              (vec2/scale 0.99))
+                   new-vel (-> new-pos
+                               (vec2/sub p)
 
-                  vel-x (vec2/get-x new-vel)
-                  ]
+                               (vec2/add consts/gravity)
+                               (vec2/scale 0.99))
 
-              (recur (inc n)
-                     new-pos
-                     new-vel))
+                   vel-x (vec2/get-x new-vel)
+                   ]
 
-            ;; picked up
-            (do
-              (swap! state/state update :runes inc)
-              (sound/play-sound :collect 0.5 false))))))))
+               (recur (inc n)
+                      new-pos
+                      new-vel))
+
+             ;; picked up
+             (do
+               (swap! state/state update :runes inc)
+               (sound/play-sound :collect 0.5 false)))))))))

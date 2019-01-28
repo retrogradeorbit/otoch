@@ -5,6 +5,7 @@
             [infinitelives.utils.math :as math]
             [infinitelives.utils.spatial :as spatial]
             [infinitelives.utils.sound :as sound]
+            [infinitelives.utils.async :as async]
             [infinitelives.utils.console :refer [log]]
             [infinitelives.pixi.sprite :as s]
             [infinitelives.pixi.canvas :as c]
@@ -20,9 +21,11 @@
 #_ [@enemies @state/state]
 
 (defn add! [ekey enemy]
+  ;;(js/console.log "add!" ekey (str enemy))
   (swap! enemies assoc ekey enemy))
 
 (defn remove! [ekey]
+  ;;(js/console.log "remove!" ekey)
   (swap! enemies dissoc ekey))
 
 (defn count-enemies []
@@ -52,56 +55,60 @@
   )
 
 (defn spawn [container start-pos sprite]
-  (go
-    (let [ekey (keyword (gensym))
-          start-frame 0]
-      (c/with-sprite container
-        [enemy (s/make-sprite sprite :pos (vec2/scale start-pos 64))]
-        (swap! enemies assoc ekey {:pos start-pos} )
-        (loop [n 0
-               p start-pos
-               v (vec2/zero)
-               facing :left
-               ]
-          (let [ppos (vec2/scale p 64)
-                [x y] ppos
-                y (if (= sprite :enemy-1) (wobble y n) y)
-                ]
-            (swap! enemies assoc-in [ekey :pos] p)
-            (s/set-pos! enemy x y))
-          (s/set-scale! enemy (if (= :left facing) 1 -1) 1)
-          (<! (e/next-frame))
-          (if true ;;(< n 3000)
-            ;; still alive
-            (do
-              #_ (let [frame (int (/ n 60))
-                       texture :rune-1]
-                   (s/set-texture! sprite (t/get-texture texture)))
+  (let [start-game-num (:game-num @state/state)
+        ekey (keyword (gensym))]
+    (go
+      (async/continue-while
+       (= start-game-num (:game-num @state/state))
+       (let [start-frame 0]
+         (c/with-sprite container
+           [enemy (s/make-sprite sprite :pos (vec2/scale start-pos 64))]
+           (add! ekey {:pos start-pos} )
+           (loop [n 0
+                  p start-pos
+                  v (vec2/zero)
+                  facing :left
+                  ]
+             (let [ppos (vec2/scale p 64)
+                   [x y] ppos
+                   y (if (= sprite :enemy-1) (wobble y n) y)
+                   ]
+               (swap! enemies assoc-in [ekey :pos] p)
+               (s/set-pos! enemy x y))
+             (s/set-scale! enemy (if (= :left facing) 1 -1) 1)
+             (<! (e/next-frame))
+             (if true ;;(< n 3000)
+               ;; still alive
+               (do
+                 #_ (let [frame (int (/ n 60))
+                          texture :rune-1]
+                      (s/set-texture! sprite (t/get-texture texture)))
 
-              (let [platform-state
-                    (-> platforms/platforms
-                        (platforms/prepare-platforms n)
-                        (platforms/filter-platforms (vec2/zero)))
+                 (let [platform-state
+                       (-> platforms/platforms
+                           (platforms/prepare-platforms n)
+                           (platforms/filter-platforms (vec2/zero)))
 
-                    new-pos
-                    (constraints/constrain-pos
-                     constraints/enemy-constrain
-                     (-> platforms/platforms
-                         (platforms/prepare-platforms (+ 1 start-frame n))
-                         (platforms/filter-platforms p))
-                     p (vec2/add (vec2/add p v) (vec2/vec2 (if (= :left facing) (- speed) speed) 0)))
-
-                    new-vel (-> new-pos
-                                (vec2/sub p)
-
-                                (vec2/add consts/gravity)
-                                (vec2/scale 0.98))
-                    vel-x (vec2/get-x new-vel)
-                    new-facing (if (zero? vel-x) (reverse-dir facing) facing)
-                    ]
-
-                (recur (inc n)
                        new-pos
-                       new-vel
-                       new-facing)))
-            p))))))
+                       (constraints/constrain-pos
+                        constraints/enemy-constrain
+                        (-> platforms/platforms
+                            (platforms/prepare-platforms (+ 1 start-frame n))
+                            (platforms/filter-platforms p))
+                        p (vec2/add (vec2/add p v) (vec2/vec2 (if (= :left facing) (- speed) speed) 0)))
+
+                       new-vel (-> new-pos
+                                   (vec2/sub p)
+
+                                   (vec2/add consts/gravity)
+                                   (vec2/scale 0.98))
+                       vel-x (vec2/get-x new-vel)
+                       new-facing (if (zero? vel-x) (reverse-dir facing) facing)
+                       ]
+
+                   (recur (inc n)
+                          new-pos
+                          new-vel
+                          new-facing)))
+               p)))))
+      (remove! ekey))))
