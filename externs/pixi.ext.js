@@ -2111,4 +2111,4 @@ PIXI.accessibility.AccessibilityManager.prototype = {
   "destroy": function () {}
 };
 
-uniforms = {}
+var uniforms = {};
