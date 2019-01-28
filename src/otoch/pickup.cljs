@@ -33,6 +33,14 @@
               ]
          (let [[x y] p]
            (set-pos pickup x y n))
+
+         (while (>
+                 (vec2/magnitude-squared
+                  (vec2/sub (:pos @state/state) p))
+                 (* 50 50))
+           ;; far away from player. sleep for a bit (less CPU)
+           (<! (e/wait-time (int (+ 1000 (* 1000 (rand)))))))
+
          (<! (e/next-frame))
          (let [player-pos (:pos @state/state)
                distance-squared (vec2/magnitude-squared (vec2/sub player-pos p))

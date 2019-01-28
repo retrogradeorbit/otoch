@@ -75,6 +75,15 @@
                    ]
                (swap! enemies assoc-in [ekey :pos] p)
                (s/set-pos! enemy x y))
+
+             ;; stop processing when far away rom player
+             (while (>
+                     (vec2/magnitude-squared
+                      (vec2/sub (:pos @state/state) p))
+                     (* 50 50))
+               ;; far away from player. sleep for a bit (less CPU)
+               (<! (e/wait-time (int (+ 1000 (* 1000 (rand)))))))
+
              (s/set-scale! enemy (if (= :left facing) 1 -1) 1)
              (<! (e/next-frame))
              (if true ;;(< n 3000)
