@@ -199,19 +199,21 @@
   the text disappears.
   "
   [icon y font s]
-  (go
-    (c/with-sprite :stats
-      [icon (s/make-sprite icon :scale 1 :y (+ y -5))
-       text (pf/make-text font (str s) :scale 2 :xhandle 0 :x 50 :y y)]
-      (loop [s (:runes @state/state)]
+  (let [start-game-num (:game-num @state/state)]
+    (async/go-while
+     (= start-game-num (:game-num @state/state))
+     (c/with-sprite :stats
+       [icon (s/make-sprite icon :scale 1 :y (+ y -5))
+        text (pf/make-text font (str s) :scale 2 :xhandle 0 :x 50 :y y)]
+       (loop [s (:runes @state/state)]
 
-        (<! (e/next-frame))
-        (let [new-s (:runes @state/state)]
-          (when (not= s new-s)
-            ;; value changed
-            (pf/change-text! text font (str new-s))
-            (s/update-handle! text 0 0.5))
-          (recur new-s))))))
+         (<! (e/next-frame))
+         (let [new-s (:runes @state/state)]
+           (when (not= s new-s)
+             ;; value changed
+             (pf/change-text! text font (str new-s))
+             (s/update-handle! text 0 0.5))
+           (recur new-s)))))))
 
 (defn megalith-set-pos! [sprite pos]
   (let [
