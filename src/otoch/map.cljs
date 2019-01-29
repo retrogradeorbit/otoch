@@ -334,6 +334,56 @@
                         :x (* 64 col) :y (* 64 row)
                         :xhandle 0 :yhandle 0))))))
 
+(defn partition-tilemap [tile-map cell-width cell-height]
+  (let [map-height (count tile-map)
+        map-width (count (first tile-map))]
+    (->>
+     (for [x (range 0 map-width cell-width)
+           y (range 0 map-height cell-height)]
+       [
+        ;; key
+        [x y]
+
+        ;; value
+        {:top-left [x y]
+
+         :center [(+ x (/ cell-width 2))
+                  (+ y (/ cell-height 2))]
+
+         :tiles
+         (mapv
+          (fn [yi]
+            (mapv (fn [xi] (get-in tile-map [yi xi]))
+                  (range x (min (+ x cell-width) map-width))))
+          (range y (min (+ y cell-height) map-height)))}
+
+        ])
+     (into {}))))
+
+(defn make-container-chunks [tile-set partitioned-map]
+  (into {}
+        (for [[k {:keys [top-left tiles center] :as chunk}] partitioned-map]
+          (let [[x y] top-left]
+            [k (assoc chunk :sprites
+                      (s/make-container
+                       :children (make-tiles tile-set tiles)
+                       :x (* 64 x)
+                       :y (* 64 y)))]))))
+
+#_
+(->
+ [[10 11 12 13 14 15 16 17 18 19 10]
+  [20 21 22 23 24 25 26 27 28 29 20]
+  [30 31 32 33 34 35 36 37 38 39 30]
+  [40 41 42 43 44 45 46 47 48 49 40]
+  [50 51 52 53 54 55 56 57 58 59 50]
+  [60 61 62 63 64 65 66 67 68 69 60]
+  [70 71 72 73 74 75 76 77 78 79 70]
+  [80 81 82 83 84 85 86 87 88 89 80]
+  [90 91 92 93 94 95 96 97 98 99 90]
+  [10 11 12 13 14 15 16 17 18 19 10]]
+ (partition-tilemap 4 4))
+
 
 (defn make-tiles-struct
   "returns a dict that can be used to tell which nth element of a tileset

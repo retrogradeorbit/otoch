@@ -456,7 +456,24 @@
             rune-display (make-text-display :rune-1 0 :numbers 0)
 
             heart-position (vec2/vec2 62 -5)
+
+            cell-width 64
+            cell-height 32
+            partitioned-map (tm/partition-tilemap tm/tile-map cell-width cell-height)
+
+            partitioned-map
+            (tm/make-container-chunks tile-set partitioned-map)
+
             ]
+        (js/console.log "!" (str (:tiles (partitioned-map [50 0]))))
+
+        ;; all tilemap chunks invisible
+        ;; (loop [[chunk & r] (vals partitioned-map)]
+        ;;   (s/set-visible! (:sprites chunk) false)
+        ;;   (when r (recur r)))
+
+        ;; ;; once centered on us visible
+        ;; (s/set-visible! (-> partitioned-map (get [50 0]) :sprites) true)
 
         #_(c/with-sprite canvas :tilemap
             [tilemap  (s/make-container
@@ -514,8 +531,10 @@
            dynamites (s/make-container :scale 1 :particle false)
 
            tilemap (s/make-container
-                    :children (tm/make-tiles tile-set tm/tile-map)
-                    :xhandle 0 :yhandle 0
+                    :children (map :sprites (vals partitioned-map))
+                    ;;:xhandle 0 :yhandle 0
+                    ;;:x (* 64 50)
+                    ;;:y 0
                     :scale 1
                     ;;:particle true
                     ;;:particle-opts #{:alpha}
@@ -556,18 +575,18 @@
           (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
 
           (doseq [[xp yp] [[98 393]
-                         [53 400]
-                         [161 397]
-                         [134 408]
-                         [153 407]
-                         [145 379]
-                         [82 385]
-                         [36 389]
-                         [62 375]
-                         [143 379]
-                         [17 370]
-                         [120 368]]
-                ]
+                           [53 400]
+                           [161 397]
+                           [134 408]
+                           [153 407]
+                           [145 379]
+                           [82 385]
+                           [36 389]
+                           [62 375]
+                           [143 379]
+                           [17 370]
+                           [120 368]]
+                  ]
             (enemy/spawn enemies (vec2/vec2 (- xp 9) (- yp 358)) (rand-nth [:enemy-1 :enemy-2]))
             )
 
@@ -651,6 +670,50 @@
                 platforms-this-frame
                 [tilemap platform ;;platform2 platform3
                  ]))
+
+              ;; all tilemap chunks invisible
+              (loop [[chunk & r] (vals partitioned-map)]
+                (s/set-visible! (:sprites chunk) false)
+                (when r (recur r)))
+
+              ;; once centered on us visible
+              (let [xc (* cell-width (int (/ px cell-width)))
+                    yc (* cell-height (int (/ py cell-height)))
+                    xrem (mod px cell-width)
+                    yrem (mod py cell-height)
+                    left? (< xrem (/ cell-width 2))
+                    top? (< yrem (/ cell-height 2))
+                    right? (not left?)
+                    bottom? (not top?)
+                    ]
+                (js/console.log "=" left? top?)
+                (s/set-visible! (-> partitioned-map (get [xc yc]) :sprites) true)
+                (if top?
+                  (some-> partitioned-map (get [xc (- yc cell-height)]) :sprites (s/set-visible! true))
+                  (some-> partitioned-map (get [xc (+ yc cell-height)]) :sprites (s/set-visible! true)))
+
+                (if left?
+                  (some-> partitioned-map (get [(- xc cell-width) yc]) :sprites (s/set-visible! true))
+                  (some-> partitioned-map (get [(+ xc cell-width) yc]) :sprites (s/set-visible! true)))
+
+                (cond
+                  (and left? top?)
+                  (some-> partitioned-map (get [(- xc cell-width) (- yc cell-height)]) :sprites (s/set-visible! true))
+
+                  (and left? bottom?)
+                  (some-> partitioned-map (get [(- xc cell-width) (+ yc cell-height)]) :sprites (s/set-visible! true))
+
+                  (and right? top?)
+                  (some-> partitioned-map (get [(+ xc cell-width) (- yc cell-height)]) :sprites (s/set-visible! true))
+
+                  (and right? bottom?)
+                  (some-> partitioned-map (get [(+ xc cell-width) (+ yc cell-height)]) :sprites (s/set-visible! true))
+
+
+
+                  )
+
+                )
 
 
               (s/set-pos! foreground (int x) (int y))
