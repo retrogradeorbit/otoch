@@ -686,7 +686,7 @@
                     right? (not left?)
                     bottom? (not top?)
                     ]
-                (js/console.log "=" left? top?)
+                ;;(js/console.log "=" left? top?)
                 (s/set-visible! (-> partitioned-map (get [xc yc]) :sprites) true)
                 (if top?
                   (some-> partitioned-map (get [xc (- yc cell-height)]) :sprites (s/set-visible! true))
@@ -947,7 +947,7 @@
                       (sound/play-sound :death 0.3 false)
 
                       ;; particles
-                      (doseq [n (range 32)]
+                      (doseq [n (range 16)]
                         (let [vel (vec2/add
                                    (vec2/scale (vec2/add (vec2/random)
                                                          (vec2/vec2 0 -0.3)

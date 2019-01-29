@@ -38,10 +38,10 @@
 (defn particle-constrain [pass? pos old-pos new-pos]
   (line/constrain-offset
    {:passable? pass?
-    :h-edge 0.01
-    :v-edge 0.01
-    :minus-h-edge 0.99
-    :minus-v-edge 0.99}
+    :h-edge 0.001
+    :v-edge 0.001
+    :minus-h-edge 0.999
+    :minus-v-edge 0.999}
    pos new-pos old-pos))
 
 (defn pickup-constrain [pass? pos old-pos new-pos]
