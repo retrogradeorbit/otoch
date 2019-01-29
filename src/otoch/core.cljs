@@ -545,6 +545,37 @@
                      :scale 1
                      ;;:particle true
                      )
+
+           platform-cavern-1 (s/make-container
+                              :children (tm/make-tiles tile-set platforms/platform-map)
+                              ;; :xhandle 0 :yhandle 0
+                              :scale 1
+                              ;;:particle true
+                              )
+
+           platform-cavern-2 (s/make-container
+                              :children (tm/make-tiles tile-set platforms/platform-map)
+                              ;; :xhandle 0 :yhandle 0
+                              :scale 1
+                              ;;:particle true
+                              )
+
+           platform-cavern-3 (s/make-container
+                              :children (tm/make-tiles tile-set platforms/platform-map)
+                              ;; :xhandle 0 :yhandle 0
+                              :scale 1
+                              ;;:particle true
+                              )
+
+           platform-cavern-4 (s/make-container
+                              :children (tm/make-tiles tile-set platforms/platform-map)
+                              ;; :xhandle 0 :yhandle 0
+                              :scale 1
+                              ;;:particle true
+                              )
+
+
+
            ;; platform2 (s/make-container
            ;;            :children (tm/make-tiles tile-set platform2-map)
            ;;            :xhandle 0 :yhandle 0
@@ -571,27 +602,26 @@
 
            ]
 
-          (enemy/spawn enemies (vec2/vec2 43 0) :enemy-1)
-          (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
+          ;; disable enemies by setting this false
+          (when true
+            (enemy/spawn enemies (vec2/vec2 43 0) :enemy-1)
+            (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
 
-          (doseq [[xp yp] [[98 393]
-                           [53 400]
-                           [161 397]
-                           [134 408]
-                           [153 407]
-                           [145 379]
-                           [82 385]
-                           [36 389]
-                           [62 375]
-                           [143 379]
-                           [17 370]
-                           [120 368]]
-                  ]
-            (enemy/spawn enemies (vec2/vec2 (- xp 9) (- yp 358)) (rand-nth [:enemy-1 :enemy-2]))
-            )
-
-          ;; (enemy/spawn enemies (vec2/vec2 43 0) :enemy-1)
-          ;; (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
+            (doseq [[xp yp] [[98 393]
+                             [53 400]
+                             [161 397]
+                             [134 408]
+                             [153 407]
+                             [145 379]
+                             [82 385]
+                             [36 389]
+                             [62 375]
+                             [143 379]
+                             [17 370]
+                             [120 368]]
+                    ]
+              (enemy/spawn enemies (vec2/vec2 (- xp 9) (- yp 358)) (rand-nth [:enemy-1 :enemy-2]))
+              ))
           (heart/spawn behind-player heart-position)
           (pickup/spawn behind-player :rune 0 (vec2/vec2 3 3))
 
@@ -668,7 +698,12 @@
                         [x y] pos]
                     (s/set-pos! obj (int x) (int y))))
                 platforms-this-frame
-                [tilemap platform ;;platform2 platform3
+                [tilemap
+                 platform
+                 platform-cavern-1
+                 platform-cavern-2
+                 platform-cavern-3
+                 platform-cavern-4
                  ]))
 
               ;; all tilemap chunks invisible
