@@ -3,6 +3,7 @@
             [infinitelives.utils.events :as e]
             [infinitelives.utils.boid :as b]
             [infinitelives.utils.math :as math]
+            [infinitelives.utils.async :as async]
             [infinitelives.utils.spatial :as spatial]
             [infinitelives.utils.sound :as sound]
             [infinitelives.utils.console :refer [log]]
@@ -46,62 +47,64 @@
       ))
 
 (defn spawn [container position]
-  (go
-    (c/with-sprite container
-      [heart (s/make-sprite :heart :pos (vec2/scale position 64))]
-      (loop [n 0
-             pos position]
-        (let [[x y] pos]
-          (s/set-pos! heart
-                      (vec2/scale
-                       (vec2/add
-                        (vec2/vec2
-                         (+ x (sin x-amp x-freq n))
-                         (+ y (sin y-amp y-freq n)))
-                        (vec2/vec2 0 (:trees @state/state)))
-                       64))
-          #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
-        (<! (e/next-frame))
+  (let [start-game-num (:game-num @state/state)]
+    (async/go-while
+     (= start-game-num (:game-num @state/state))
+     (c/with-sprite container
+       [heart (s/make-sprite :heart :pos (vec2/scale position 64))]
+       (loop [n 0
+              pos position]
+         (let [[x y] pos]
+           (s/set-pos! heart
+                       (vec2/scale
+                        (vec2/add
+                         (vec2/vec2
+                          (+ x (sin x-amp x-freq n))
+                          (+ y (sin y-amp y-freq n)))
+                         (vec2/vec2 0 (:trees @state/state)))
+                        64))
+           #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
+         (<! (e/next-frame))
 
-        (let [player-pos (:pos @state/state)
-              distance-squared
-              (vec2/magnitude-squared
-               (vec2/sub player-pos
-                         (vec2/add pos
-                                   (vec2/vec2 0 (:trees @state/state)))))]
-          (if (> distance-squared 1)
-            ;; still hanging around
-            (recur (inc n) pos)
+         (let [player-pos (:pos @state/state)
+               distance-squared
+               (vec2/magnitude-squared
+                (vec2/sub player-pos
+                          (vec2/add pos
+                                    (vec2/vec2 0 (:trees @state/state)))))]
+           (if (> distance-squared 1)
+             ;; still hanging around
+             (recur (inc n) pos)
 
-            ;; player has touched us
-            (do
-              (swap! state/state assoc :touched-heart? true)
+             ;; player has touched us
+             (do
+               (swap! state/state assoc :touched-heart? true)
 
-              (loop [n n]
-                (let [[x y] pos]
-                  (s/set-pos! heart
-                              (vec2/scale
-                               (vec2/add
-                                (vec2/vec2
-                                 (+ x (sin x-amp x-freq n))
-                                 (+ y (sin y-amp y-freq n)))
-                                (vec2/vec2 0 (:trees @state/state)))
-                               64))
-                  #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
+               (loop [n n]
+                 (let [[x y] pos]
+                   (s/set-pos! heart
+                               (vec2/scale
+                                (vec2/add
+                                 (vec2/vec2
+                                  (+ x (sin x-amp x-freq n))
+                                  (+ y (sin y-amp y-freq n)))
+                                 (vec2/vec2 0 (:trees @state/state)))
+                                64))
+                   #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
 
-                ;; spawn a particle
-                (when (zero? (mod n star-every-frame))
-                  (doseq [num (range star-at-a-time)]
-                    (particle/spawn
-                     container
-                     (star-burst-texture-fn)
-                     n
-                     (vec2/add pos (vec2/vec2 0 (:trees @state/state)))
-                     (star-burst-vel)
-                     (rand)
-                     star-burst-life
-                     )))
+                 ;; spawn a particle
+                 (when (zero? (mod n star-every-frame))
+                   (doseq [num (range star-at-a-time)]
+                     (particle/spawn
+                      container
+                      (star-burst-texture-fn)
+                      n
+                      (vec2/add pos (vec2/vec2 0 (:trees @state/state)))
+                      (star-burst-vel)
+                      (rand)
+                      star-burst-life
+                      )))
 
-                (<! (e/next-frame))
+                 (<! (e/next-frame))
 
-                (recur (inc n))))))))))
+                 (recur (inc n)))))))))))

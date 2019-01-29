@@ -909,6 +909,7 @@
                         (do (s/set-alpha! beam-1 0)
                             (s/set-alpha! beam-2 0)
                             (s/set-alpha! beam-3 0)
+
                             (loop [fnum fnum]
 
                               (let [[x y] [0 0]]
