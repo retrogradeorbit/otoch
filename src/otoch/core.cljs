@@ -604,33 +604,15 @@
 
           ;; disable enemies by setting this false
           (when true
-            (enemy/spawn enemies (vec2/vec2 43 0) :enemy-1)
-            (enemy/spawn enemies (vec2/vec2 44 0) :enemy-2)
 
-            (doseq [[xp yp] [[98 393]
-                             [53 400]
-                             [161 397]
-                             [134 408]
-                             [153 407]
-                             [145 379]
-                             [82 385]
-                             [36 389]
-                             [62 375]
-                             [143 379]
-                             [17 370]
-                             [120 368]]
-                    ]
-              (enemy/spawn enemies (vec2/vec2 (- xp 9) (- yp 358)) (rand-nth [:enemy-1 :enemy-2]))
-              ))
+            (doseq [[enemy-type locations] tm/enemies]
+              (doseq [[x y] locations]
+                (enemy/spawn enemies (vec2/vec2 x y)  enemy-type)))
+)
           (heart/spawn behind-player heart-position)
-          (pickup/spawn behind-player :rune 0 (vec2/vec2 3 3))
 
-          #_ (doseq [n (range num-enemies)]
-               (enemy/spawn enemies (vec2/vec2 (int (* 100 (rand))) (int (* 60 (rand))))
-                            (rand-nth [:enemy-1 :enemy-2])))
-
-          (doseq [n (range num-runes)]
-            (pickup/spawn behind-player :rune 0 (vec2/vec2 (int (* 100 (rand))) (int (* 60 (rand))))))
+          (doseq [[x y] tm/rune-locations]
+            (pickup/spawn behind-player :rune 0 (vec2/vec2 x y)))
 
           (s/set-scale! background 1)
           (s/set-scale! background-2 1)

@@ -63,8 +63,9 @@
                    new-vel (-> new-pos
                                (vec2/sub p)
 
-                               (vec2/add consts/gravity)
-                               (vec2/scale 0.99))
+                               ;;(vec2/add consts/gravity)
+                               ;;(vec2/scale 0.99)
+                               )
 
                    vel-x (vec2/get-x new-vel)
                    ]

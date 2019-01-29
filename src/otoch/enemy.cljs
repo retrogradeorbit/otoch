@@ -77,7 +77,7 @@
                (s/set-pos! enemy x y))
 
              ;; stop processing when far away rom player
-             (while (>
+             #_ (while (>
                      (vec2/magnitude-squared
                       (vec2/sub (:pos @state/state) p))
                      (* 50 50))
