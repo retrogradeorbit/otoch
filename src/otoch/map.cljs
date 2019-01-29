@@ -43,6 +43,10 @@
   #{:dirt-1 :dirt-2 :dirt-3 :dirt-4 :dirt-5 :dirt-6 :dirt-7 :dirt-8 :dirt-9 :dirt-10 :dirt-11
     })
 
+(def all-blocks
+  #{:block-1 :block-2 :block-3 :block-4 :block-5
+    })
+
 (defn remapv [y-1 y y+1]
   (let [res (match [y-1 y y+1]
                    ;; [(_ :guard (complement (conj all-dirt :dirt-top-left :dirt-top-right)))
@@ -56,9 +60,9 @@
                     _]
                    (rand-nth [:dirt-top-1 :dirt-top-2 :dirt-top-3])
 
-[_
+                   [_
                     (_ :guard all-dirt)
-                    (_ :guard #(= % :space))
+                    (_ :guard (complement (into (conj all-dirt :rocks-1 :rocks-2) all-blocks)))
                     ]
                    (rand-nth [:dirt-under-1 :dirt-under-2])
 
@@ -215,10 +219,7 @@
                                    :block-2 :block-2 :block-2
                                    :block-3 :block-3 :block-3
                                    :block-4 :block-4 :block-4
-                                   :block-5 :block-5 :block-5
-                                   :rocks-1
-                                   :rocks-2
-                                   :rocks-3])
+                                   :block-5 :block-5 :block-5])
 
                         :dirt
                         (rand-nth
