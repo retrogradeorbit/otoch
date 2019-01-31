@@ -490,8 +490,8 @@
 
             heart-position (vec2/vec2 62 -5)
 
-            cell-width 64
-            cell-height 32
+            cell-width 32
+            cell-height 16
             partitioned-map (tm/partition-tilemap tm/tile-map cell-width cell-height)
 
             partitioned-map
