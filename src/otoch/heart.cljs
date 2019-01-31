@@ -48,7 +48,7 @@
       ))
 
 (defn lower-vec []
-  (vec2/vec2 0 (:trees @state/state))
+  (vec2/vec2 0 (/ (:trees @state/state) 2))
   )
 
 (defn spawn [container]
@@ -74,8 +74,7 @@
                distance-squared
                (vec2/magnitude-squared
                 (vec2/sub player-pos
-                          (vec2/add tm/heart-position
-                                    (vec2/vec2 0 (:trees @state/state)))))]
+                          (vec2/add tm/heart-position (lower-vec))))]
            (if (> distance-squared 1)
              ;; still hanging around
              (recur (inc n))
@@ -103,7 +102,7 @@
                       container
                       (star-burst-texture-fn)
                       n
-                      (vec2/add tm/heart-position lower-vec)
+                      (vec2/add tm/heart-position (lower-vec))
                       (star-burst-vel)
                       (rand)
                       star-burst-life
