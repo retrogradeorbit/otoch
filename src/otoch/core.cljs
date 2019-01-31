@@ -365,20 +365,53 @@
   (* amp (Math/sin (* n freq))))
 
 (defn set-beams [beam-1 beam-2 beam-3 x y fnum]
-  (s/set-pos! beam-1 (+ x (* 61.5 64)
-                        (sin 4 0.1 fnum)
-                        (sin 4 0.3 fnum)
-                        ) (- y 5000))
-  (s/set-alpha! beam-1 (min 1 (+ 0.8 (rand))))
+  (s/set-pos! beam-1
+              (-> tm/heart-position
+                  (vec2/add (vec2/vec2 -0.4 0))
+                  (vec2/scale 64)
+                  (vec2/add (vec2/scale
+                             (vec2/vec2 1 0)
+                             (* (sin 2 0.1 fnum)
+                                (sin 2 0.3 fnum)
+                                (sin 2 0.037 fnum)
+                                )))
+                  (vec2/add (vec2/vec2 x -5000)))
+              )
+  (s/set-alpha! beam-1 0.5)
   (s/set-scale! beam-1 1 1)
 
   (s/set-pos! beam-2 (+ x (* 61.75 64) (sin 8 0.12 fnum)) (- y 5000))
-  (s/set-alpha! beam-2 (min 1 (+ 0.2 (rand))))
+
+  (s/set-pos! beam-2
+              (-> tm/heart-position
+                  (vec2/add (vec2/vec2 -0.25 0))
+                  (vec2/scale 64)
+                  (vec2/add (vec2/scale
+                             (vec2/vec2 1 0)
+                             (* (sin 8 0.1252 fnum)
+
+                                )))
+                  (vec2/add (vec2/vec2 x -5000)))
+              )
+
+  (s/set-alpha! beam-2 0.5)
   (s/set-scale! beam-2 0.5 1)
 
   (s/set-pos! beam-3 (int (+ x (* 61.875 64) (sin 8 0.08 fnum)))
               (int (- y 5000)))
-  (s/set-alpha! beam-3 (min 1 (+ 0.2 (rand))))
+  (s/set-pos! beam-3
+              (-> tm/heart-position
+                  (vec2/add (vec2/vec2 -0.15 0))
+                  (vec2/scale 64)
+                  (vec2/add (vec2/scale
+                             (vec2/vec2 1 0)
+                             (* (sin 8 0.0847 fnum)
+
+                                )))
+                  (vec2/add (vec2/vec2 x -5000)))
+              )
+
+  (s/set-alpha! beam-3 0.5)
   (s/set-scale! beam-3 0.25 1)
   )
 
@@ -509,7 +542,7 @@
                     [(+ 10 (* 15 64)) (* 6 64)]
                     [44 1]
                     )
-                   64 10000)
+                   44 10000)
 
            beam-2 (js/PIXI.TilingSprite.
                    (t/sub-texture
@@ -517,7 +550,7 @@
                     [(+ 10 (* 15 64)) (* 8 64)]
                     [44 1]
                     )
-                   64 10000)
+                   44 10000)
 
            beam-3 (js/PIXI.TilingSprite.
                    (t/sub-texture
@@ -574,19 +607,6 @@
                               ;;:particle true
                               )
 
-
-
-           ;; platform2 (s/make-container
-           ;;            :children (tm/make-tiles tile-set platform2-map)
-           ;;            :xhandle 0 :yhandle 0
-           ;;            :scale 1
-           ;;            :particle true)
-           ;; platform3 (s/make-container
-           ;;            :children (tm/make-tiles tile-set platform2-map)
-           ;;            :xhandle 0 :yhandle 0
-           ;;            :scale 1
-           ;;            :particle true)
-
            behind-player (s/make-container)
 
            player (s/make-sprite stand :scale 1)
@@ -607,9 +627,9 @@
 
             (doseq [[enemy-type locations] tm/enemies]
               (doseq [[x y] locations]
-                (enemy/spawn enemies (vec2/vec2 x y)  enemy-type)))
-)
-          (heart/spawn behind-player heart-position)
+                (enemy/spawn enemies (vec2/vec2 x y)  enemy-type))))
+
+          (heart/spawn behind-player)
 
           (doseq [[x y] tm/rune-locations]
             (pickup/spawn behind-player :rune 0 (vec2/vec2 x y)))
@@ -620,7 +640,7 @@
                  state :walking
                  fnum 0
                  old-vel (vec2/vec2 0 0)
-                 ppos (vec2/vec2 62 4.5)
+                 ppos tm/start-position
                  jump-pressed 0
                  last-x-pressed? (e/is-pressed? :x)
                  facing :left

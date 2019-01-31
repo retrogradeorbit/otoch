@@ -11,6 +11,7 @@
             [infinitelives.pixi.canvas :as c]
             [otoch.state :as state]
             [otoch.consts :as consts]
+            [otoch.map :as tm]
             [otoch.constraints :as constraints]
             [otoch.platforms :as platforms]
             [otoch.particle :as particle]
@@ -46,22 +47,25 @@
       (vec2/add (vec2/vec2 0 -0.1))
       ))
 
-(defn spawn [container position]
+(defn lower-vec []
+  (vec2/vec2 0 (:trees @state/state))
+  )
+
+(defn spawn [container]
   (let [start-game-num (:game-num @state/state)]
     (async/go-while
      (= start-game-num (:game-num @state/state))
      (c/with-sprite container
-       [heart (s/make-sprite :heart :pos (vec2/scale position 64))]
-       (loop [n 0
-              pos position]
-         (let [[x y] pos]
+       [heart (s/make-sprite :heart :pos (vec2/scale tm/heart-position 64))]
+       (loop [n 0]
+         (let [[x y] tm/heart-position]
            (s/set-pos! heart
                        (vec2/scale
                         (vec2/add
                          (vec2/vec2
                           (+ x (sin x-amp x-freq n))
                           (+ y (sin y-amp y-freq n)))
-                         (vec2/vec2 0 (:trees @state/state)))
+                         (lower-vec))
                         64))
            #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
          (<! (e/next-frame))
@@ -70,25 +74,25 @@
                distance-squared
                (vec2/magnitude-squared
                 (vec2/sub player-pos
-                          (vec2/add pos
+                          (vec2/add tm/heart-position
                                     (vec2/vec2 0 (:trees @state/state)))))]
            (if (> distance-squared 1)
              ;; still hanging around
-             (recur (inc n) pos)
+             (recur (inc n))
 
              ;; player has touched us
              (do
                (swap! state/state assoc :touched-heart? true)
 
                (loop [n n]
-                 (let [[x y] pos]
+                 (let [[x y] tm/heart-position]
                    (s/set-pos! heart
                                (vec2/scale
                                 (vec2/add
                                  (vec2/vec2
                                   (+ x (sin x-amp x-freq n))
                                   (+ y (sin y-amp y-freq n)))
-                                 (vec2/vec2 0 (:trees @state/state)))
+                                 (lower-vec))
                                 64))
                    #_ (s/set-scale! heart (+ size-off (sin size-amp size-freq n))))
 
@@ -99,7 +103,7 @@
                       container
                       (star-burst-texture-fn)
                       n
-                      (vec2/add pos (vec2/vec2 0 (:trees @state/state)))
+                      (vec2/add tm/heart-position lower-vec)
                       (star-burst-vel)
                       (rand)
                       star-burst-life

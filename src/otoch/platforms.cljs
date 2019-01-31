@@ -45,7 +45,7 @@
    {:name :t-platform
     :fn (fn [fnum]
           (let [x 9
-                y (+ 7 (* 2.01 (Math/sin (/ fnum 60))))]
+                y (+ 7 5 (* 2.01 (Math/sin (/ fnum 60))))]
             (vec2/vec2 (/ (int (* 64 x)) 64) (/ (int (* 64 y)) 64))))
     :passable? platform-passable?
     :apply? (fn [pos] (let [x (vec2/get-x pos)
@@ -57,7 +57,7 @@
    {:name :platform-cavern-1
     :fn (fn [fnum]
           (let [x 22
-                y (+ 34 (* 2.01 (Math/sin (/ fnum 60))))]
+                y (+ 34 5 (* 2.01 (Math/sin (/ fnum 60))))]
             (vec2/vec2 (/ (int (* 64 x)) 64) (/ (int (* 64 y)) 64))))
     :passable? platform-passable?
     :apply? (fn [pos] (let [x (vec2/get-x pos)
@@ -69,7 +69,7 @@
    {:name :platform-cavern-2
     :fn (fn [fnum]
           (let [x (+ 35 (* 7.01 (Math/sin (/ fnum 80))))
-                y 32]
+                y (+ 32 5)]
             (vec2/vec2 (/ (int (* 64 x)) 64) (/ (int (* 64 y)) 64))))
     :passable? platform-passable?
     :apply? (fn [pos] (let [x (vec2/get-x pos)
@@ -81,7 +81,7 @@
    {:name :platform-cavern-3
     :fn (fn [fnum]
           (let [x (+ 56 (* 7.01 (- (Math/sin (/ fnum 80)))))
-                y 32]
+                y (+ 32 5)]
             (vec2/vec2 (/ (int (* 64 x)) 64) (/ (int (* 64 y)) 64))))
     :passable? platform-passable?
     :apply? (fn [pos] (let [x (vec2/get-x pos)
@@ -93,7 +93,7 @@
    {:name :platform-cavern-4
     :fn (fn [fnum]
           (let [x (+ 55 (* -4.01 (Math/sin (/ fnum 80))))
-                y (+ 22 (* 7.01 (Math/cos (/ fnum 80))))]
+                y (+ 22 5 (* 7.01 (Math/cos (/ fnum 80))))]
             (vec2/vec2 (/ (int (* 64 x)) 64) (/ (int (* 64 y)) 64))))
     :passable? platform-passable?
     :apply? (fn [pos] (let [x (vec2/get-x pos)

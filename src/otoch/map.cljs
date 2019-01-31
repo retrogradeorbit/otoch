@@ -1,5 +1,6 @@
 (ns otoch.map
   (:require [infinitelives.utils.console :refer [log]]
+            [infinitelives.utils.vec2 :as vec2]
             [infinitelives.pixi.resources :as r]
             [infinitelives.pixi.texture :as t]
             [infinitelives.pixi.sprite :as s]
@@ -29,6 +30,10 @@
     "!" :space
     "0" :space
     "1" :space
+
+    ;; markers for start locations
+    "S" :space
+    "H" :space
     ))
 
 (defn strs->keymap [strs]
@@ -412,14 +417,19 @@ is at a location [x y]. keys are positions. values are nth index"
 
 (def tile-map-src
   [
+   "                                                                                                                                                                                 "
+   "                                                                                                                                                                                 "
+   "                                                               H                                                                                                                 "
+   "                                                                                                                                                                                 "
+   "                                                                                                                                                                                 "
    "B                    !                                                                                                                                 ++++++++++++++++++++++++++"
-   "B                                                                                !             f    ++++                                               ++++++++++++++++++++++++++"
+   "B                                    !                                           !             f    ++++                                               ++++++++++++++++++++++++++"
    "B                  ff .ff                                                                ff  +++++++++++  XX       f  f ,           f  f               ++++++++++++++++++++++++++"
    "B ff             XXXXXXXXXXX                                                           +++++++++++++++++          XXXXXXX         XXXXXXXX                                 ++++++"
    "BXXXXX                        .                                                      +++++++++++++++++++                       f  ,,                    ++++++++++++++++++ ++++++"
    "B                            XXX                                                      ++++++++++++++++++                     XXXXXXXXX               +++++++++++++++++++++ ++++++"
-   "B             ff tf  .                                                                 +++++++++++++++++               !                             ++++++++++            ++++++"
-   "B             XXXXXXXXXX                                                               +++++++++++++++++               B                          t  ++++++++++ +++++++++++++++++"
+   "B                                                                                     +++++++++++++++++               !                             ++++++++++            ++++++"
+   "B                                                              S                       +++++++++++++++++               B                          t  ++++++++++ +++++++++++++++++"
    "B    . f                                                   +++++++++                   +++++++++++++++++              BBB                        ++++++++++++++ +++++++++++++++++"
    "B   XXXXXX            f  . fff  . f                    ++++++++++++++++                +++++++++++++++++             BBBBB                    n  ++++++++++++++          ++++++++"
    "B                   XXXXXXXXXXXXXXXXXXX            ++++++++++++++++++++++++            +++++++++++++++++            BBBBBBB                  ++++++++++++++++++++++++ !! ++++++++"
@@ -509,3 +519,11 @@ is at a location [x y]. keys are positions. values are nth index"
 
 (def enemies
   (calculate-enemies tile-map-src))
+
+(def heart-position
+  (vec2/add (vec2/vec2 0.5 0.5)
+            (apply vec2/vec2 (first (find-locations tile-map-src "H")))))
+
+(def start-position
+  (vec2/add (vec2/vec2 0.5 0.5)
+            (apply vec2/vec2 (first (find-locations tile-map-src "S")))))
