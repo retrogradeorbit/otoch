@@ -27,7 +27,7 @@
 (def text-ypos 230)
 (def text-spacing 30)
 (def volume 0.3)
-(def text-delay 500)
+(def text-delay 600)
 
 (defn keyboard-controls [canvas title a1 a2 b1 b2 c1 c2]
   (async/go-while
