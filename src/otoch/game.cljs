@@ -302,12 +302,12 @@
                         new-vel
                         ))))))))))
 
-(defn run [canvas]
+(defn run [canvas tile-set]
   (go
     (state/reset-state!)
 
     ;; make the tile texture lookup
-    (let [tile-set (tm/make-tile-set :tiles)
+    (let [
           stand (t/sub-texture (r/get-texture :tiles :nearest) [0 (* 4 96)] [64 64])
           walk (t/sub-texture (r/get-texture :tiles :nearest) [(* 4 16) (* 4 96)] [64 64])
           tilemap-order-lookup (tm/make-tiles-struct tile-set tm/tile-map)
@@ -561,13 +561,7 @@
                 (some-> partitioned-map (get [(+ xc cell-width) (- yc cell-height)]) :sprites (s/set-visible! true))
 
                 (and right? bottom?)
-                (some-> partitioned-map (get [(+ xc cell-width) (+ yc cell-height)]) :sprites (s/set-visible! true))
-
-
-
-                )
-
-              )
+                (some-> partitioned-map (get [(+ xc cell-width) (+ yc cell-height)]) :sprites (s/set-visible! true))))
 
 
             (s/set-pos! foreground (int x) (int y))
@@ -629,7 +623,8 @@
                   standing-on-ground? (> 0.06 (Math/abs (- (vec2/get-y fallen-pos) (vec2/get-y old-pos))))
 
                   jump-pressed (cond
-                                 (and (controls/jump-button-pressed?) (zero? jump-pressed) standing-on-ground?) ;; cant jump off ladder! if you can, problem... when jumping off lader, state stays climbing causing no accel for the jump
+                                 (and (controls/jump-button-pressed?) (zero? jump-pressed) standing-on-ground?)
+                                 ;; cant jump off ladder! if you can, problem... when jumping off lader, state stays climbing causing no accel for the jump
                                  (inc jump-pressed)
 
                                  (and (controls/jump-button-pressed?) (pos? jump-pressed))
@@ -726,14 +721,20 @@
                  dynamites ppos old-vel fnum)
                 (swap! state/state update :runes dec))
 
-              (when (and (controls/jump-button-pressed?) standing-on-ground?)
+              (when (and (controls/jump-button-pressed?) (= 1 jump-pressed) standing-on-ground?)
                 (sound/play-sound :jump 0.3 false))
 
               (when (> (vec2/magnitude-squared (vec2/sub original-vel old-vel)) 0.01)
                 (sound/play-sound :thud 0.06 false)
                 )
 
-              (when (e/is-pressed? :r)
+              ;; hold down R U N E to crank up your rune count
+              (when (and (e/is-pressed? :r)
+                         (e/is-pressed? :u)
+                         (e/is-pressed? :n)
+                         (e/is-pressed? :e)
+
+                         )
                 (swap! state/state update :runes inc))
 
               (case facing
@@ -745,7 +746,11 @@
               (let [die? (enemy/collided? con-pos)]
                 ;; (js/console.log "die?" die?)
                 (if-not (or die?
-                            (e/is-pressed? :q)
+
+                            ;; hold down D I E to die
+                            (and (e/is-pressed? :d)
+                                 (e/is-pressed? :i)
+                                 (e/is-pressed? :e))
 
                             ;; have we hit a deathtile?
                             (#{:death-tile-upper-1
@@ -789,7 +794,7 @@
                        old-vel
                        con-pos
                        jump-pressed
-                       (e/is-pressed? :x)
+                       (controls/throw-rune-pressed?)
                        (case (Math/sign joy-dx)
                          -1 :left
                          0 facing

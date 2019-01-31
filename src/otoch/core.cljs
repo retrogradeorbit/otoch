@@ -23,6 +23,7 @@
             [otoch.enemy :as enemy]
             [otoch.heart :as heart]
             [otoch.game :as game]
+            [otoch.titlescreen :as titlescreen]
             [otoch.pickup :as pickup]
             [otoch.utils :as utils]
             [cljs.core.async :refer [chan close! >! <! timeout]]
@@ -151,7 +152,7 @@
                    :space 5)
 
     ;; make a small pixelly font
-    (pf/pixel-font :pixel "img/fonts.png" [10 10] [248 70]
+    (pf/pixel-font :pixel "img/fonts.png" [10 110] [240 170]
                    :chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#`'.,"
                    :space 3)
 
@@ -168,20 +169,9 @@
              (<! (e/next-frame))
              (recur))))
 
-    (go
-      (c/with-sprite :title
-        [title (s/make-sprite :title
-                              :scale 1
-                              :xhandle 0.5
-                              :yhandle 0.5
-                              :alpha 1.0)]
-        (loop [n 0]
-          (let [frac (/ n 20)]
-            (s/set-pos! title 0 (- 250 (* frac frac 100)))
-            (s/set-scale! title (/ 2 (inc (* frac frac))))
-            (<! (e/next-frame))
-            (when (< n 150)
-              (recur (+ n 0.1)))))))
-
-    (while true
-      (<! (game/run canvas)))))
+    (let [tile-set (tm/make-tile-set :tiles)]
+      (while true
+        (<! (titlescreen/run canvas tile-set))
+        (<! (game/run canvas tile-set))
+        ;;(<! (e/next-frame))
+        ))))
