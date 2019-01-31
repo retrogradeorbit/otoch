@@ -2,13 +2,15 @@ Mayan Megalithic Mayhem!
 
 a shaman stuck in the forest on a distant world u crave the comfort of hearth and home but how will u get there?
 
-![Screenshot](screenshot.png)
+![Title](resources/public/img/album-cover.png)
 
 [PLAY IT NOW!](https://retrogradeorbit.github.io/otoch/)
 
 ## Overview
 
 For Global Game Jam 2019
+
+![Screenshot](screenshot.png)
 
 ## Setup
 
