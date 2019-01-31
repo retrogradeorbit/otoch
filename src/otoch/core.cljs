@@ -15,6 +15,7 @@
             [otoch.line :as line]
             [otoch.map :as tm]
             [otoch.consts :as consts]
+            [otoch.controls :as controls]
             [otoch.state :as state]
             [otoch.constraints :as constraints]
             [otoch.platforms :as platforms]
@@ -162,13 +163,6 @@
   (if (< (vec2/magnitude-squared v) lim)
     (vec2/zero)
     v))
-
-(defn jump-button-pressed? []
-  (or
-   (e/is-pressed? :z)
-   (e/is-pressed? :space)
-   (gp/button-pressed? 0 :x)))
-
 
 ;; work out if we are standing on a platform, and if
 ;; so, which one?  to do this, we simulate the
@@ -498,7 +492,6 @@
             (tm/make-container-chunks tile-set partitioned-map)
 
             ]
-        (js/console.log "!" (str (:tiles (partitioned-map [50 0]))))
 
         ;; all tilemap chunks invisible
         ;; (loop [[chunk & r] (vals partitioned-map)]
@@ -661,15 +654,7 @@
                   dx (- px pix)
                   dy (- py piy)
 
-                  joy (vec2/vec2 (or (gp/axis 0)
-                                     (cond (e/is-pressed? :left) -1
-                                           (e/is-pressed? :right) 1
-                                           :default 0) )
-                                 (or (gp/axis 1)
-                                     (cond (e/is-pressed? :up) -1
-                                           (e/is-pressed? :down) 1
-                                           :default 0)
-                                     ))
+                  joy (controls/get-joy-vec)
 
                   platforms-this-frame (platforms/prepare-platforms platforms/platforms fnum)
 
@@ -812,17 +797,17 @@
                     standing-on-ground? (> 0.06 (Math/abs (- (vec2/get-y fallen-pos) (vec2/get-y old-pos))))
 
                     jump-pressed (cond
-                                   (and (jump-button-pressed?) (zero? jump-pressed) standing-on-ground?) ;; cant jump off ladder! if you can, problem... when jumping off lader, state stays climbing causing no accel for the jump
+                                   (and (controls/jump-button-pressed?) (zero? jump-pressed) standing-on-ground?) ;; cant jump off ladder! if you can, problem... when jumping off lader, state stays climbing causing no accel for the jump
                                    (inc jump-pressed)
 
-                                   (and (jump-button-pressed?) (pos? jump-pressed))
+                                   (and (controls/jump-button-pressed?) (pos? jump-pressed))
                                    (inc jump-pressed)
 
                                    :default
                                    0)
 
                     jump-force (if (and (<= 1 jump-pressed consts/jump-frames)
-                                        (jump-button-pressed?))
+                                        (controls/jump-button-pressed?))
                                  (vec2/vec2 0 (- (if (= 1 jump-pressed)
                                                    consts/jump-accel-1
                                                    consts/jump-accel-2+)))
@@ -904,12 +889,12 @@
                     ]
                 (when (and (pos? (:runes @state/state))
                            (not last-x-pressed?)
-                           (e/is-pressed? :x))
+                           (controls/throw-rune-pressed?))
                   (make-dynamite
                    dynamites ppos old-vel fnum)
                   (swap! state/state update :runes dec))
 
-                (when (and (jump-button-pressed?) standing-on-ground?)
+                (when (and (controls/jump-button-pressed?) standing-on-ground?)
                   (sound/play-sound :jump 0.3 false))
 
                 (when (> (vec2/magnitude-squared (vec2/sub original-vel old-vel)) 0.01)
