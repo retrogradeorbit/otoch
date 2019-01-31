@@ -73,7 +73,9 @@
 
                    [_
                     (_ :guard all-dirt)
-                    (_ :guard (complement (into (conj all-dirt :rocks-1 :rocks-2 :rocks-3) all-blocks)))
+                    (_ :guard (complement (into (conj all-dirt
+                                                      :rocks-1 :rocks-2 :rocks-3
+                                                      :death-tile-upper-1 :death-tile-upper-2) all-blocks)))
                     ]
                    (rand-nth [:dirt-under-1 :dirt-under-2])
 
