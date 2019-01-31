@@ -183,7 +183,7 @@
 
                   (<! (keyboard-controls canvas
                                          "Credits"
-                                         "Art and Sound" "Chris McCormick"
+                                         "Graphics and Sound" "Chris McCormick"
                                          "Code" "Crispin Wellington"
                                          "Music" "Pyotr Tchaikovsky"))
                   (<! (e/wait-frames 60))
