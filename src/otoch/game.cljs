@@ -600,14 +600,13 @@
                   square-standing-on (tm/get-tile-at tm/tile-map pix
                                                      (int (+ 0.3 py)))
 
-                  on-ladder-transition? (or (= square-on :ladder)
-                                            (= square-on :ladder-top)
-                                            (= square-below :ladder-top))
+                  on-ladder-transition? (or (tm/all-ladders square-on)
+                                            (tm/all-ladders square-below))
 
-                  on-ladder? (#{:ladder :ladder-top} square-standing-on)
+                  on-ladder? (tm/all-ladders square-standing-on)
 
-                  ladder-up? (#{:ladder :ladder-top} square-standing-on)
-                  ladder-down? (#{:ladder :ladder-top} square-below)
+                  ladder-up? (tm/all-ladders square-standing-on)
+                  ladder-down? (tm/all-ladders square-below)
 
                   plat (which-platform? old-pos filtered-platforms)
 
@@ -633,7 +632,8 @@
                   standing-on-ground? (> 0.06 (Math/abs (- (vec2/get-y fallen-pos) (vec2/get-y old-pos))))
 
                   jump-pressed (cond
-                                 (and (controls/jump-button-pressed?) (zero? jump-pressed) standing-on-ground?)
+                                 (and (controls/jump-button-pressed?) (zero? jump-pressed)
+                                      (or standing-on-ground? on-ladder?))
                                  ;; cant jump off ladder! if you can, problem... when jumping off lader, state stays climbing causing no accel for the jump
                                  (inc jump-pressed)
 
