@@ -712,7 +712,8 @@ PIXI.Sprite.prototype = {
   "off": function () {},
   "addListener": function () {},
   "setMaxListeners": function () {},
-  "tint": {}
+  "tint": {},
+  "mask": {}
 };
 PIXI.ParticleContainer.prototype = {
   "constructor": function () {},
