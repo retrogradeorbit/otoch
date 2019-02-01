@@ -194,10 +194,6 @@
                          (if (< n 300)
                            ;; still alive
                            (do
-                             #_ (let [frame (int (/ n 60))
-                                      texture :rune-1]
-                                  (s/set-texture! sprite (t/get-texture texture)))
-
                              (let [platform-state
                                    (-> platforms/platforms
                                        (platforms/prepare-platforms n)
