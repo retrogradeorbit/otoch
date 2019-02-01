@@ -49,8 +49,9 @@
 
    :megalith {:size [64 64] :pos [(* 4 64) (* 2 64)]}
 
-   :enemy-1 {:size [64 64] :pos [(* 64 3) (* 64 7)]}
-   :enemy-2 {:size [64 64] :pos [(* 64 5) (* 64 7)]}
+   :enemy-0 {:size [64 64] :pos [(* 64 3) (* 64 7)]}
+   :enemy-1 {:size [64 64] :pos [(* 64 5) (* 64 7)]}
+   :enemy-2 {:size [64 64] :pos [(* 64 3) (* 64 7)]}
 
    :star-1 {:size [16 16] :pos [64 (* 9 64)]}
    :star-2 {:size [16 16] :pos [(+ 16 64) (* 9 64)]}
@@ -173,7 +174,7 @@
     (let [tile-set (tm/make-tile-set :tiles)
           title-tile-set (titlescreen/make-tile-set :tiles-title)]
       (while true
-        (<! (titlescreen/run canvas title-tile-set))
+        ;;(<! (titlescreen/run canvas title-tile-set))
         (<! (game/run canvas tile-set))
         ;;(<! (e/next-frame))
         ))))

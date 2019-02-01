@@ -461,8 +461,8 @@
         (when true
 
           (doseq [[enemy-type locations] tm/enemies]
-            (doseq [[x y] locations]
-              (enemy/spawn enemies (vec2/vec2 x y)  enemy-type))))
+            (doseq [[n [x y]] (map-indexed vector locations)]
+              (enemy/spawn enemies (vec2/vec2 x y) enemy-type n))))
 
         (heart/spawn behind-player)
 

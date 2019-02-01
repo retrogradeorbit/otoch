@@ -50,13 +50,21 @@
 
 (def speed 0.0005)
 
+(defn sin [a t n]
+  (* a (Math/sin (/ n t)))
+  )
+
+(defn cos [a t n]
+  (* a (Math/cos (/ n t)))
+  )
+
 (defn wobble [y n]
   (+ y (* 4 (Math/sin (/ n 12))))
   )
 
 (defmulti spawn (fn [_ _ sprite] sprite))
 
-(defmethod spawn :enemy-1 [container start-pos sprite]
+(defmethod spawn :enemy-0 [container start-pos sprite]
   (let [start-game-num (:game-num @state/state)
         ekey (keyword (gensym))]
     (go
@@ -73,7 +81,7 @@
                   ]
              (let [ppos (vec2/scale p 64)
                    [x y] ppos
-                   y (if (= sprite :enemy-1) (wobble y n) y)
+                   y (wobble y n)
                    ]
                (swap! enemies assoc-in [ekey :pos] p)
                (s/set-pos! enemy x y))
@@ -124,7 +132,7 @@
                p)))))
       (remove! ekey))))
 
-(defmethod spawn :enemy-2 [container start-pos sprite]
+(defmethod spawn :enemy-1 [container start-pos sprite]
   (let [start-game-num (:game-num @state/state)
         ekey (keyword (gensym))]
     (go
@@ -141,12 +149,11 @@
                   ]
              (let [ppos (vec2/scale p 64)
                    [x y] ppos
-                   y (if (= sprite :enemy-1) (wobble y n) y)
                    ]
                (swap! enemies assoc-in [ekey :pos] p)
                (s/set-pos! enemy x y))
 
-             ;; stop processing when far away rom player
+             ;; stop processing when far away from player
              #_ (while (>
                      (vec2/magnitude-squared
                       (vec2/sub (:pos @state/state) p))
@@ -190,4 +197,96 @@
                           new-vel
                           new-facing)))
                p)))))
+      (remove! ekey))))
+
+;; Lissajous figures
+(defn xf [A a δ t]
+  (* A (Math/sin (+ δ (* a t)))))
+
+(defn yf [B b t]
+  (* B (Math/sin (* b t))))
+
+(defn e2-pos [start-pos n {:keys [A B a b d]}]
+  ;;(js/console.log A B a b d)
+  (let [x (xf A a d n)
+        y (yf B b n)]
+    (-> (vec2/vec2 x y)
+        (vec2/add start-pos)
+        )))
+
+(defn facing [n {:keys [a]}]
+  (pos? (Math/cos (+ (/ Math/PI 2) 0.5 (* a n)))))
+
+(def figure-8 {:A 3
+               :B 1
+               :a 0.02
+               :b 0.04
+               :d (/ Math/PI 2)})
+
+
+(def opts
+  {:enemy-2
+   [
+    ;; figure 8
+    {:A 3
+     :B 1
+     :a 0.02
+     :b 0.04
+     :d (/ Math/PI 2)}
+
+    ;; ABC symbol
+    {:A 4
+     :B 1
+     :a 0.01
+     :b 0.03
+     :d (/ Math/PI 2)
+     :xoff -0.5
+     }
+
+    ;; circle
+    {:A 1
+     :B 1
+     :a 0.05
+     :b 0.05
+     :d (/ Math/PI 2)
+     :xoff -0.5
+     }
+
+    ]})
+(defn get-opts [enemy-type n]
+  (let [res (get-in opts [enemy-type n])]
+    (js/console.log res)
+    res)
+  )
+
+
+(defmethod spawn :enemy-2 [container start-pos sprite &
+                           [ind]]
+  (let [start-game-num (:game-num @state/state)
+        ekey (keyword (gensym))]
+    (go
+      (async/continue-while
+       (= start-game-num (:game-num @state/state))
+       (let [start-frame 0]
+         (c/with-sprite container
+           [enemy (s/make-sprite sprite :pos (vec2/scale start-pos 64))]
+           (add! ekey {:pos start-pos} )
+           (loop [n 0]
+             (let [p (e2-pos (vec2/add start-pos
+                                       (vec2/vec2 (get-in opts [:enemy-2 ind :xoff] 0)
+                                                  (get-in opts [:enemy-2 ind :yoff] 0)
+                                                  ))
+                             n
+                             (or (get-in opts [:enemy-2 ind]) figure-8))
+                   ppos (vec2/scale p 64)
+                   [x y] ppos
+                   ]
+               (swap! enemies assoc-in [ekey :pos] p)
+               (s/set-pos! enemy x y))
+
+             (s/set-scale! enemy
+                           (if (facing n (or (get-in opts [:enemy-2 ind]) figure-8)) -1 1)
+                           1)
+             (<! (e/next-frame))
+             (recur (inc n))))))
       (remove! ekey))))
