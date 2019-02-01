@@ -174,7 +174,5 @@
     (let [tile-set (tm/make-tile-set :tiles)
           title-tile-set (titlescreen/make-tile-set :tiles-title)]
       (while true
-        ;;(<! (titlescreen/run canvas title-tile-set))
-        (<! (game/run canvas tile-set))
-        ;;(<! (e/next-frame))
-        ))))
+        (<! (titlescreen/run canvas title-tile-set))
+        (<! (game/run canvas tile-set))))))
