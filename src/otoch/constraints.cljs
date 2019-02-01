@@ -17,7 +17,7 @@
     :minus-v-edge consts/minus-v-edge}
    pos new-pos old-pos))
 
-(defn dynamite-constrain [pass? pos old-pos new-pos]
+(defn rune-constrain [pass? pos old-pos new-pos]
   (line/constrain-offset
    {:passable? pass?
     :h-edge 0.1

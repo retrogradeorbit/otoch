@@ -34,6 +34,9 @@
     ;; markers for start locations
     "S" :space
     "H" :space
+
+    ;; hack for titlescreen
+    "P" :player
     ))
 
 (defn strs->keymap [strs]
@@ -331,6 +334,8 @@
          :flower-4 [(* 12 64) (* 2 64)]
          :flower-5 [(* 13 64) (* 2 64)]
 
+         ;; titlescreen
+         :player [0 (* 64 6)]
          }
         ]
     (->> tile-lookup
@@ -430,7 +435,7 @@ is at a location [x y]. keys are positions. values are nth index"
    "B ff             XXXXXXXXXXX                                                           +++++++++++++++++          XXXXXXX         XXXXXXXX                                 ++++++"
    "BXXXXX                        .                                                      +++++++++++++++++++                       f  ,,                    ++++++++++++++++++ ++++++"
    "B                            XXX                                                      ++++++++++++++++++                     XXXXXXXXX               +++++++++++++++++++++ ++++++"
-   "B                                                                                     +++++++++++++++++               !                             ++++++++++            ++++++"
+   "B                                                                                      +++++++++++++++++               !                             ++++++++++            ++++++"
    "B                                                              S                       +++++++++++++++++               B                          t  ++++++++++ +++++++++++++++++"
    "B    . f                                                   +++++++++                   +++++++++++++++++              BBB                        ++++++++++++++ +++++++++++++++++"
    "B   XXXXXX            f  . fff  . f                    ++++++++++++++++                +++++++++++++++++             BBBBB                    n  ++++++++++++++          ++++++++"
@@ -451,16 +456,16 @@ is at a location [x y]. keys are positions. values are nth index"
    "+++++++          ----                ++++++++++B               BBBBBBBBBBB   +++++++++++++++++++    +++++++BBBBBBBBBBBBBBBB        B    BBBBB       BBB+++++++++++  ++++++++++---"
    "++++++   !        -                !    +++++++B               B+++++++++B   +++++++++++++++++      +++++++BBBBBBBBBBBBBBBBBBBBBBB B BB BBBBB BBBB  BBB+++++++++++  ++++++++++---"
    "++++++            -      ----           +++++++B               BBBBBBBBBBB   +++++++++++++++++  !   +++++++BBBBBBBBBBBBBBBBBBBBBBB   BB   BBB     B BBB+++++++++    ++++++++++---"
-   "++++++++          -                  ++++++++++B                  BBBB        +++++VV              ^+++++++BBBBBBBBBBBBBBBB      B BBBBBB BBBBBB  B BBB++++++++     ++++++++++---"
-   "+++++++++++++     -     1      +++BBBBB++++++++B                   BB          ++++   +++++++++++++++++++++BBBBBBBBBBBBBBB  BB B   BB     B    BB B                 ++++++++++---"
-   "+++++++++++++     +++++++++++++++B     B+++BBBBB                   BB         +++++   +++++++++++++++++++++BBBBBBBBBB      BBB B BBBB BBBBB BB    BBBBB+++++++++++++++++++++++---"
+   "++++++++    ++    -                  ++++++++++B                  BBBB        +++++VV              ^+++++++BBBBBBBBBBBBBBBB      B BBBBBB BBBBBB  B BBB++++++++     ++++++++++---"
+   "++++++++++++++    -     1      +++BBBBB++++++++B                   BB          ++++   +++++++++++++++++++++BBBBBBBBBBBBBBB  BB B   BB     B    BB B                 ++++++++++---"
+   "++++++++++++      +++++++++++++++B     B+++BBBBB                   BB         +++++   +++++++++++++++++++++BBBBBBBBBB      BBB B BBBB BBBBB BB    BBBBB+++++++++++++++++++++++---"
    "++                ++BBBBBBBBBBBBBB     BBBBB                       BB+     ++++++++      ++++++++++++++++++BBBBBBBBBBBBBBBBBBB B            BBBBB     B+++++++++++++++++++++++---"
    "+++++++++++++     ++BB              ^                              BB++++  ++++++              ++++++++++++BBBBBBBBBBBBBBBBBBB BBBBBBBBBBBBBBBBBBBBB  ++++++++++++++++++++++++---"
-   "+++++++++++++     ++BB              B                             !BB+++++ +++++               +++++++++++++++++++++++++++++++ ++++++++++++++++++++    +++++++++++++++++++++++---"
-   "++++++++++++      ++BB                                             BB+++++ +++++               +++++++++++++++++++++++++++++++ ++++++++++++++++++++    +++++++++++++++++++++++---"
+   "+++++++++++++    +++BB              B                             !BB+++++ +++++               +++++++++++++++++++++++++++++++ ++++++++++++++++++++    +++++++++++++++++++++++---"
+   "++++++++++++     +++BB                                             BB+++++ +++++               +++++++++++++++++++++++++++++++ ++++++++++++++++++++    +++++++++++++++++++++++---"
    "++++++++++++       +BB                                             BB++++  ++++                     ++++++++++++++++++++++++++ +++++++++++++++++++++++++++++++++++++++++++++++---"
-   "++++++++++++        BB        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^BB++   +++++                      -------------                                                        -------"
-   "+++++++++++      !  BB        BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB+  +++++++                      ------------- -----------------------------------------------------  -------"
+   "+++++++++++++       BB        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^BB++   +++++                      -------------                                                        -------"
+   "+++++++++++++    !  BB        BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB+  +++++++                      ------------- -----------------------------------------------------  -------"
    "+++++++++++        +BB        B++++++++++++++++++++++++++++++++++++++  ++++++++                      ------------- -------------------------BBBBBBBBBBBBBBBBBBB---------  -------"
    "+++++++++++   ++++++BB      +++++++++++++++++++++++++++++++++++++++++ +++++++++                     ------------     -----------------------B                 B---------  -------"
    "++++++++++    ++++++BB    ++++++++++++++++++++++++    nN   trt,. N   n t,,.tN trt,.               --------------     -----------------------B                 B---------  -------"
@@ -529,3 +534,34 @@ is at a location [x y]. keys are positions. values are nth index"
 (def start-position
   (vec2/add (vec2/vec2 0.5 0.5)
             (apply vec2/vec2 (first (find-locations tile-map-src "S")))))
+
+
+
+;;
+;; titlescreen tilemaps
+;;
+(def titlescreen-mapsrc-1
+  [
+   "+++++++++"
+   "+++++++++"
+   "+++++++++"])
+
+(def titlescreen-map-1
+  (-> titlescreen-mapsrc-1 strs->keymap remap-keymap randomise-keymap remaph-keymap remapv-keymap))
+
+(def titlescreen-mapsrc-2
+  [
+   "+++++++++++++++"
+   "+++++++++++++++"
+   "+++++++++++++++"])
+
+(def titlescreen-map-2
+  (-> titlescreen-mapsrc-2 strs->keymap remap-keymap randomise-keymap remaph-keymap remapv-keymap))
+
+(def titlescreen-mapsrc-3
+  [
+   "P"
+   "B"])
+
+(def titlescreen-map-3
+  (-> titlescreen-mapsrc-3 strs->keymap remap-keymap randomise-keymap remaph-keymap remapv-keymap))

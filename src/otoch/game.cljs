@@ -38,9 +38,6 @@
   (js/console.log "pos:" (vec2/add (vec2/scale heart-position 64) (vec2/vec2 x y)))
   (s/set-pos! player heart-position))
 
-
-
-
 (defn set-beams [beam-1 beam-2 beam-3 x y fnum]
   (s/set-pos! beam-1
               (-> tm/heart-position
@@ -128,7 +125,7 @@
 
 
 (defn make-text-display
-  "create an updating number display with icon. Used for gold/dynamite etc.
+  "create an updating number display with icon. Used for gold/rune etc.
   icon and text appeads at `y` with font `font` displaying string `s`.
   returns a channel. When you push a value down the channel, the
   display will update to that pushed value. When you close! the channel,
@@ -179,9 +176,22 @@
     (vec2/zero)
     v))
 
-(defn make-dynamite [container pos vel start-frame]
+(defn make-tree-mask []
+  (doto (js/PIXI.Graphics.)
+               (.beginFill 0xff0000)
+               (.drawRect 0 0 256 256)
+               (.endFill)))
+
+(defn set-sprite-mask [sprite mask]
+  (s/set-pos! mask -128 -128)
+  (set! (.-mask sprite) mask)
+  (.addChild sprite mask)
+  )
+
+(defn make-rune [container pos vel start-frame]
   (sound/play-sound :runethrow 0.2 false)
-  (let [start-game-num (:game-num @state/state)]
+  (let [start-game-num (:game-num @state/state)
+        mask (make-tree-mask)]
     (async/go-while
      (= start-game-num (:game-num @state/state))
      (c/with-sprite container
@@ -194,17 +204,13 @@
                          (if (< n 300)
                            ;; still alive
                            (do
-                             #_ (let [frame (int (/ n 60))
-                                      texture :rune-1]
-                                  (s/set-texture! sprite (t/get-texture texture)))
-
                              (let [platform-state
                                    (-> platforms/platforms
                                        (platforms/prepare-platforms n)
                                        (platforms/filter-platforms (vec2/zero)))
                                    new-pos
                                    (constraints/constrain-pos
-                                    constraints/dynamite-constrain
+                                    constraints/rune-constrain
                                     (-> platforms/platforms
                                         (platforms/prepare-platforms (megalith-fn start-frame n))
                                         (platforms/filter-platforms p))
@@ -236,6 +242,8 @@
            (sound/play-sound :monolith 0.3 false)
            (s/set-texture! sprite tree)
 
+           (set-sprite-mask sprite mask)
+
            (s/set-scale! sprite 1)
            (s/set-anchor-y! sprite 1)
 
@@ -245,6 +253,8 @@
                                               rise 1
                                               ]
                                          (megalith-set-pos! sprite (vec2/add p (vec2/vec2 0 (* tile-height rise))))
+                                         (let [mask-y (+ 2 -256 (* rise (- tree-height)))]
+                                           (s/set-pos! mask -128 mask-y))
 
                                          (<! (e/next-frame))
 
@@ -255,7 +265,7 @@
                                                      (platforms/filter-platforms (vec2/zero)))
                                                  new-pos
                                                  (constraints/constrain-pos
-                                                  constraints/dynamite-constrain
+                                                  constraints/rune-constrain
                                                   (-> platforms/platforms
                                                       (platforms/prepare-platforms (megalith-fn start-frame n))
                                                       (platforms/filter-platforms p))
@@ -288,7 +298,7 @@
                          (platforms/filter-platforms (vec2/zero)))
                      new-pos
                      (constraints/constrain-pos
-                      constraints/dynamite-constrain
+                      constraints/rune-constrain
                       (-> platforms/platforms
                           (platforms/prepare-platforms (megalith-fn start-frame n))
                           (platforms/filter-platforms p))
@@ -302,12 +312,12 @@
                         new-vel
                         ))))))))))
 
-(defn run [canvas]
+(defn run [canvas tile-set]
   (go
     (state/reset-state!)
 
     ;; make the tile texture lookup
-    (let [tile-set (tm/make-tile-set :tiles)
+    (let [
           stand (t/sub-texture (r/get-texture :tiles :nearest) [0 (* 4 96)] [64 64])
           walk (t/sub-texture (r/get-texture :tiles :nearest) [(* 4 16) (* 4 96)] [64 64])
           tilemap-order-lookup (tm/make-tiles-struct tile-set tm/tile-map)
@@ -386,7 +396,7 @@
                  44 10000)
 
 
-         dynamites (s/make-container :scale 1 :particle false)
+         runes (s/make-container :scale 1 :particle false)
 
          tilemap (s/make-container
                   :children (map :sprites (vals partitioned-map))
@@ -503,7 +513,7 @@
             ;; player still playing
             (set-player player x y px py)
 
-            (s/set-pos! dynamites x y)
+            (s/set-pos! runes x y)
 
             ;;(js/console.log "===>" (str platforms-this-frame))
 
@@ -561,13 +571,7 @@
                 (some-> partitioned-map (get [(+ xc cell-width) (- yc cell-height)]) :sprites (s/set-visible! true))
 
                 (and right? bottom?)
-                (some-> partitioned-map (get [(+ xc cell-width) (+ yc cell-height)]) :sprites (s/set-visible! true))
-
-
-
-                )
-
-              )
+                (some-> partitioned-map (get [(+ xc cell-width) (+ yc cell-height)]) :sprites (s/set-visible! true))))
 
 
             (s/set-pos! foreground (int x) (int y))
@@ -629,7 +633,8 @@
                   standing-on-ground? (> 0.06 (Math/abs (- (vec2/get-y fallen-pos) (vec2/get-y old-pos))))
 
                   jump-pressed (cond
-                                 (and (controls/jump-button-pressed?) (zero? jump-pressed) standing-on-ground?) ;; cant jump off ladder! if you can, problem... when jumping off lader, state stays climbing causing no accel for the jump
+                                 (and (controls/jump-button-pressed?) (zero? jump-pressed) standing-on-ground?)
+                                 ;; cant jump off ladder! if you can, problem... when jumping off lader, state stays climbing causing no accel for the jump
                                  (inc jump-pressed)
 
                                  (and (controls/jump-button-pressed?) (pos? jump-pressed))
@@ -722,18 +727,24 @@
               (when (and (pos? (:runes @state/state))
                          (not last-x-pressed?)
                          (controls/throw-rune-pressed?))
-                (make-dynamite
-                 dynamites ppos old-vel fnum)
+                (make-rune
+                 runes ppos old-vel fnum)
                 (swap! state/state update :runes dec))
 
-              (when (and (controls/jump-button-pressed?) standing-on-ground?)
+              (when (and (controls/jump-button-pressed?) (= 1 jump-pressed) standing-on-ground?)
                 (sound/play-sound :jump 0.3 false))
 
               (when (> (vec2/magnitude-squared (vec2/sub original-vel old-vel)) 0.01)
                 (sound/play-sound :thud 0.06 false)
                 )
 
-              (when (e/is-pressed? :r)
+              ;; hold down R U N E to crank up your rune count
+              (when (and (e/is-pressed? :r)
+                         (e/is-pressed? :u)
+                         (e/is-pressed? :n)
+                         (e/is-pressed? :e)
+
+                         )
                 (swap! state/state update :runes inc))
 
               (case facing
@@ -745,7 +756,11 @@
               (let [die? (enemy/collided? con-pos)]
                 ;; (js/console.log "die?" die?)
                 (if-not (or die?
-                            (e/is-pressed? :q)
+
+                            ;; hold down D I E to die
+                            (and (e/is-pressed? :d)
+                                 (e/is-pressed? :i)
+                                 (e/is-pressed? :e))
 
                             ;; have we hit a deathtile?
                             (#{:death-tile-upper-1
@@ -789,7 +804,7 @@
                        old-vel
                        con-pos
                        jump-pressed
-                       (e/is-pressed? :x)
+                       (controls/throw-rune-pressed?)
                        (case (Math/sign joy-dx)
                          -1 :left
                          0 facing
