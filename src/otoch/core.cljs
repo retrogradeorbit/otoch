@@ -152,14 +152,9 @@
                           {:title {:pos [0 0]
                                    :size [652 214]}})
 
-    ;; make a number font
-    (pf/pixel-font :numbers "img/fonts.png" [10 10] [248 70]
-                   :chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#`'.,"
-                   :space 5)
-
     ;; make a small pixelly font
     (pf/pixel-font :pixel "img/fonts.png" [10 110] [240 170]
-                   :chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#`'.,"
+                   :chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?#`'.,"
                    :space 3)
 
     (sound/play-sound :arabian 0.3 true)

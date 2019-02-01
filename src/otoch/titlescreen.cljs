@@ -167,7 +167,6 @@
          col (range (count (first tile-map)))]
      (let [char (nth (tile-map row) col)]
        (when (not= :space char)
-         (js/console.log "!" char)
          (s/make-sprite (tile-set char)
                         :x (* 128 col) :y (* 128 row)
                         :xhandle 0 :yhandle 0))))))
@@ -242,6 +241,13 @@
                                          "Full Stop" "Throw rune"))
                   (<! (e/wait-frames 60))
 
+
+                  (<! (keyboard-controls canvas
+                                         "Details"
+                                         "Made for" "Global Game Jam 2019"
+                                         "Location" "Perth, Australia"
+                                         "Theme" "What home means to you"))
+                  (<! (e/wait-frames 60))
 
                   (<! (keyboard-controls canvas
                                          "Added Post Game Jam"

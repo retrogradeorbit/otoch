@@ -322,7 +322,7 @@
           walk (t/sub-texture (r/get-texture :tiles :nearest) [(* 4 16) (* 4 96)] [64 64])
           tilemap-order-lookup (tm/make-tiles-struct tile-set tm/tile-map)
 
-          rune-display (make-text-display :rune-1 0 :numbers 0)
+          rune-display (make-text-display :rune-1 0 :pixel 0)
 
           heart-position (vec2/vec2 62 -5)
 
