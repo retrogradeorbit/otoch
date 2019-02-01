@@ -128,7 +128,7 @@
 
 
 (defn make-text-display
-  "create an updating number display with icon. Used for gold/dynamite etc.
+  "create an updating number display with icon. Used for gold/rune etc.
   icon and text appeads at `y` with font `font` displaying string `s`.
   returns a channel. When you push a value down the channel, the
   display will update to that pushed value. When you close! the channel,
@@ -179,7 +179,7 @@
     (vec2/zero)
     v))
 
-(defn make-dynamite [container pos vel start-frame]
+(defn make-rune [container pos vel start-frame]
   (sound/play-sound :runethrow 0.2 false)
   (let [start-game-num (:game-num @state/state)]
     (async/go-while
@@ -204,7 +204,7 @@
                                        (platforms/filter-platforms (vec2/zero)))
                                    new-pos
                                    (constraints/constrain-pos
-                                    constraints/dynamite-constrain
+                                    constraints/rune-constrain
                                     (-> platforms/platforms
                                         (platforms/prepare-platforms (megalith-fn start-frame n))
                                         (platforms/filter-platforms p))
@@ -255,7 +255,7 @@
                                                      (platforms/filter-platforms (vec2/zero)))
                                                  new-pos
                                                  (constraints/constrain-pos
-                                                  constraints/dynamite-constrain
+                                                  constraints/rune-constrain
                                                   (-> platforms/platforms
                                                       (platforms/prepare-platforms (megalith-fn start-frame n))
                                                       (platforms/filter-platforms p))
@@ -288,7 +288,7 @@
                          (platforms/filter-platforms (vec2/zero)))
                      new-pos
                      (constraints/constrain-pos
-                      constraints/dynamite-constrain
+                      constraints/rune-constrain
                       (-> platforms/platforms
                           (platforms/prepare-platforms (megalith-fn start-frame n))
                           (platforms/filter-platforms p))
@@ -386,7 +386,7 @@
                  44 10000)
 
 
-         dynamites (s/make-container :scale 1 :particle false)
+         runes (s/make-container :scale 1 :particle false)
 
          tilemap (s/make-container
                   :children (map :sprites (vals partitioned-map))
@@ -503,7 +503,7 @@
             ;; player still playing
             (set-player player x y px py)
 
-            (s/set-pos! dynamites x y)
+            (s/set-pos! runes x y)
 
             ;;(js/console.log "===>" (str platforms-this-frame))
 
@@ -717,8 +717,8 @@
               (when (and (pos? (:runes @state/state))
                          (not last-x-pressed?)
                          (controls/throw-rune-pressed?))
-                (make-dynamite
-                 dynamites ppos old-vel fnum)
+                (make-rune
+                 runes ppos old-vel fnum)
                 (swap! state/state update :runes dec))
 
               (when (and (controls/jump-button-pressed?) (= 1 jump-pressed) standing-on-ground?)
