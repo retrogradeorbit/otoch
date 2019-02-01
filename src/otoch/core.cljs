@@ -111,6 +111,10 @@
 
    })
 
+(def title-sprite-sheet-layout
+  {
+   :tree {:pos [0 0] :size [512 512]}
+   })
 
 (defonce canvas
   (c/init {:layers [:bg :tilemap :stats :title :ui]
@@ -130,6 +134,7 @@
       (<! (r/load-resources canvas :ui ["img/tiles.png"
                                         "img/fonts.png"
                                         "img/title.png"
+                                        "img/tiles-title.png"
                                         "img/background-1.png"
                                         "img/background-2.png"
                                         (if ogg? "sfx/collect.ogg" "sfx/collect.mp3")
@@ -142,6 +147,7 @@
 
     ;; load textures
     (t/load-sprite-sheet! (r/get-texture :tiles) sprite-sheet-layout)
+    (t/load-sprite-sheet! (r/get-texture :tiles-title) title-sprite-sheet-layout)
     (t/load-sprite-sheet! (r/get-texture :title)
                           {:title {:pos [0 0]
                                    :size [652 214]}})
@@ -169,9 +175,10 @@
              (<! (e/next-frame))
              (recur))))
 
-    (let [tile-set (tm/make-tile-set :tiles)]
+    (let [tile-set (tm/make-tile-set :tiles)
+          title-tile-set (titlescreen/make-tile-set :tiles-title)]
       (while true
-        (<! (titlescreen/run canvas tile-set))
+        (<! (titlescreen/run canvas title-tile-set))
         (<! (game/run canvas tile-set))
         ;;(<! (e/next-frame))
         ))))

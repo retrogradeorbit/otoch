@@ -29,6 +29,64 @@
 (def volume 0.15)
 (def text-delay 600)
 
+;;
+;; titlescreen tilemaps
+;;
+(defn key-for [c]
+  (case c
+    "l" :dirt-top-left
+    "1" :dirt-top-1
+    "2" :dirt-top-2
+    "3" :dirt-top-3
+    "r" :dirt-top-right
+    "P" :player
+    "B" :block
+    "a" :dirt-bottom-1
+    "b" :dirt-bottom-2
+    ))
+
+(defn strs->keymap [strs]
+  (mapv #(mapv key-for %) strs))
+
+(defn make-tile-set [resource-key]
+  (let [texture (r/get-texture resource-key :nearest)
+        tile-lookup
+        {
+         :dirt-top-left [(* 3 128) 0]
+         :dirt-top-1 [(* 4 128) 0]
+         :dirt-top-2 [(* 5 128) 0]
+         :dirt-top-3 [(* 6 128) 0]
+         :dirt-top-right [(* 7 128) 0]
+
+         :dirt-bottom-1 [768 128]
+         :dirt-bottom-2 [(+ 128 768) 128]
+
+         :player [512 384]
+         :block [641 384]
+         }
+        ]
+    (->> tile-lookup
+         (map (fn [[c pos]] [c (t/sub-texture texture pos [128 128])]))
+         (into {})))
+  )
+
+(def titlescreen-mapsrc-1
+  [
+   "l1322321r"
+   "abaaabbab"])
+
+(def titlescreen-map-1
+  (-> titlescreen-mapsrc-1 strs->keymap tm/remaph-keymap tm/remapv-keymap))
+
+(def titlescreen-mapsrc-3
+  [
+   "P"
+   "B"])
+
+(def titlescreen-map-3
+  (-> titlescreen-mapsrc-3 strs->keymap tm/remap-keymap tm/remaph-keymap tm/remapv-keymap))
+
+
 (defn keyboard-controls [canvas title a1 a2 b1 b2 c1 c2]
   (async/go-while
    (not (controls/start-game?))
@@ -103,6 +161,17 @@
        (when (< f 40)
          (recur (inc f)))))))
 
+(defn make-tiles [tile-set tile-map]
+  (filter identity
+   (for [row (range (count tile-map))
+         col (range (count (first tile-map)))]
+     (let [char (nth (tile-map row) col)]
+       (when (not= :space char)
+         (js/console.log "!" char)
+         (s/make-sprite (tile-set char)
+                        :x (* 128 col) :y (* 128 row)
+                        :xhandle 0 :yhandle 0))))))
+
 (defn run [canvas tile-set]
   (go
     (c/with-sprite :tilemap
@@ -120,19 +189,19 @@
                     [0 0] [1024 1024])
                    10000 10000)
 
-       banana-tree (s/make-sprite :tree-4
-                                  :scale 4
+       banana-tree (s/make-sprite :tree
+                                  :scale 1
                                   :yhandle 1)
 
        pyramid-base (s/make-container
-                     :children (tm/make-tiles tile-set tm/titlescreen-map-3)
+                     :children (make-tiles tile-set titlescreen-map-3)
                      :xhandle 0.5
                      :yhandle 1
-                     :scale 2
+                     :scale 1
                      )
        ground (s/make-container
-               :children (tm/make-tiles tile-set tm/titlescreen-map-1)
-               :scale 2
+               :children (make-tiles tile-set titlescreen-map-1)
+               :scale 1
                :xhandle 0.5
                )
        title (s/make-sprite :title
@@ -199,11 +268,11 @@
         (s/set-pos! background
                     (vec2/vec2 (- 5000) -5000))
         (s/set-pos! banana-tree
-                    (vec2/vec2 (+ (sin 10 freq n) -32) (+ 5 (* 64 2))))
+                    (vec2/vec2 (+ (sin 10 freq n) -32) (+ 5 (* 128 1))))
         (s/set-pos! pyramid-base
-                    (vec2/vec2 (+ (sin 15 freq n) 128 32) (+ 5 (* 64 2))))
+                    (vec2/vec2 (+ (sin 15 freq n) 128 32) (+ 5 (* 128 1))))
         (s/set-pos! ground
-                    (vec2/vec2 (sin 20 freq n) (* 64 2)))
+                    (vec2/vec2 (sin 20 freq n) (* 128 1)))
 
         (<! (e/next-frame))
         (when-not (controls/start-game?)
