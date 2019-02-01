@@ -38,9 +38,6 @@
   (js/console.log "pos:" (vec2/add (vec2/scale heart-position 64) (vec2/vec2 x y)))
   (s/set-pos! player heart-position))
 
-
-
-
 (defn set-beams [beam-1 beam-2 beam-3 x y fnum]
   (s/set-pos! beam-1
               (-> tm/heart-position
@@ -179,9 +176,22 @@
     (vec2/zero)
     v))
 
+(defn make-tree-mask []
+  (doto (js/PIXI.Graphics.)
+               (.beginFill 0xff0000)
+               (.drawRect 0 0 256 256)
+               (.endFill)))
+
+(defn set-sprite-mask [sprite mask]
+  (s/set-pos! mask -128 -128)
+  (set! (.-mask sprite) mask)
+  (.addChild sprite mask)
+  )
+
 (defn make-rune [container pos vel start-frame]
   (sound/play-sound :runethrow 0.2 false)
-  (let [start-game-num (:game-num @state/state)]
+  (let [start-game-num (:game-num @state/state)
+        mask (make-tree-mask)]
     (async/go-while
      (= start-game-num (:game-num @state/state))
      (c/with-sprite container
@@ -232,6 +242,8 @@
            (sound/play-sound :monolith 0.3 false)
            (s/set-texture! sprite tree)
 
+           (set-sprite-mask sprite mask)
+
            (s/set-scale! sprite 1)
            (s/set-anchor-y! sprite 1)
 
@@ -241,6 +253,8 @@
                                               rise 1
                                               ]
                                          (megalith-set-pos! sprite (vec2/add p (vec2/vec2 0 (* tile-height rise))))
+                                         (let [mask-y (+ 2 -256 (* rise (- tree-height)))]
+                                           (s/set-pos! mask -128 mask-y))
 
                                          (<! (e/next-frame))
 
