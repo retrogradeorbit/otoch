@@ -114,7 +114,7 @@
 
 (def title-sprite-sheet-layout
   {
-   :tree {:pos [0 0] :size [512 512]}
+   :tree {:pos [0 128] :size [512 (- 512 128)]}
    })
 
 (defonce canvas

@@ -41,8 +41,11 @@
     "r" :dirt-top-right
     "P" :player
     "B" :block
+    "," :dirt-1
+    "." :dirt-2
     "a" :dirt-bottom-1
     "b" :dirt-bottom-2
+    " " :space
     ))
 
 (defn strs->keymap [strs]
@@ -57,6 +60,9 @@
          :dirt-top-2 [(* 5 128) 0]
          :dirt-top-3 [(* 6 128) 0]
          :dirt-top-right [(* 7 128) 0]
+
+         :dirt-1 [512 128]
+         :dirt-2 [(+ 512 128) 128]
 
          :dirt-bottom-1 [768 128]
          :dirt-bottom-2 [(+ 128 768) 128]
@@ -73,10 +79,11 @@
 (def titlescreen-mapsrc-1
   [
    "l1322321r"
+   ".,.,,,..,"
    "abaaabbab"])
 
 (def titlescreen-map-1
-  (-> titlescreen-mapsrc-1 strs->keymap tm/remaph-keymap tm/remapv-keymap))
+  (-> titlescreen-mapsrc-1 strs->keymap))
 
 (def titlescreen-mapsrc-3
   [
@@ -84,7 +91,7 @@
    "B"])
 
 (def titlescreen-map-3
-  (-> titlescreen-mapsrc-3 strs->keymap tm/remap-keymap tm/remaph-keymap tm/remapv-keymap))
+  (-> titlescreen-mapsrc-3 strs->keymap))
 
 
 (defn keyboard-controls [canvas title a1 a2 b1 b2 c1 c2]
