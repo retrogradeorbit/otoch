@@ -261,7 +261,7 @@
      :a 0.05
      :b 0.05
      :δ (/ Math/PI 2)
-     :xoff -0.5
+     :xoff 1
      }
 
     ;; figure 8

@@ -34,7 +34,7 @@
 (def star-every-frame 60)
 
 ;; what percentage of runes brings the otoch to jumping distance
-(def precent-runes 0.9)
+(def precent-runes 0.97)           ;; need 97% of runes
 
 (defn star-burst-texture-fn []
   (rand-nth
