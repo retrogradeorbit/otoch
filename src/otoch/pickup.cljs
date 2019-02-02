@@ -21,7 +21,8 @@
   (s/set-pos! sprite (* 64 (+ x (* 0.025 (Math/sin (/ n 7))))) (* 64 (+ y (* 0.1 (Math/sin (/ n 11)))))))
 
 (defn spawn [container texture start-frame start-pos]
-  (let [start-game-num (:game-num @state/state)]
+  (let [start-game-num (:game-num @state/state)
+        start-pos (vec2/add start-pos (vec2/vec2 0.5 0.5))]
     (async/go-while
      (= start-game-num (:game-num @state/state))
      (c/with-sprite container

@@ -33,6 +33,9 @@
 (def star-at-a-time 3)
 (def star-every-frame 60)
 
+;; what percentage of runes brings the otoch to jumping distance
+(def precent-runes 0.9)
+
 (defn star-burst-texture-fn []
   (rand-nth
    [:star-1  :star-2  :star-3  :star-4
@@ -48,8 +51,10 @@
       ))
 
 (defn lower-vec []
-  (vec2/vec2 0 (/ (:trees @state/state) 2))
+  (vec2/vec2 0 (min 8 (* 8 (/ (:trees @state/state) (* 0.9 tm/num-runes)))))
   )
+
+#_ (lower-vec)
 
 (defn spawn [container]
   (let [start-game-num (:game-num @state/state)]
